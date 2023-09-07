@@ -238,7 +238,7 @@ void Game::CreateGeometry()
 		1, 2, 3,
 		3, 4, 5,
 	};
-	meshes.push_back(std::make_shared<Mesh>(verticeD12, 7, indicesD12, 12, device, context));
+	meshes.push_back(std::make_shared<Mesh>(verticeD12, ARRAYSIZE(verticeD12), indicesD12, ARRAYSIZE(indicesD12), device, context));
 
 
 	// Fourth Mesh
@@ -296,7 +296,12 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	for (std::shared_ptr<Mesh> mesh : meshes)
+	// FOR(auto& m : meshes)
+	// {
+	// m->SetBuffersAndDraw(context)
+	// }
+	//
+	for (std::shared_ptr<Mesh>& mesh : meshes)
 	{
 		mesh->Draw(deltaTime, totalTime);
 	}
