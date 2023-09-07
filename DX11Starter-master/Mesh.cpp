@@ -91,8 +91,8 @@ void Mesh::Draw(float deltaTime, float totalTime)
 		//  - For this demo, this step *could* simply be done once during Init()
 		//  - However, this needs to be done between EACH DrawIndexed() call
 		//     when drawing different geometry, so it's here as an example
-		context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-		context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+		context->IASetVertexBuffers(0, 1, this->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+		context->IASetIndexBuffer(this->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
 		// Tell Direct3D to draw
 		//  - Begins the rendering pipeline on the GPU
