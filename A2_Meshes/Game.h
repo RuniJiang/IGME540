@@ -22,9 +22,6 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
 
-	//Helper Function
-	void UIUpdate(float deltaTime);
-
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
