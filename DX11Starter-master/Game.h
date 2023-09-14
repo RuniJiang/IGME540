@@ -40,6 +40,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 	
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
+
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
@@ -47,5 +49,9 @@ private:
 
 	//Meshes
 	std::vector < std::shared_ptr<Mesh>> meshes;
+
+	DirectX::XMFLOAT3 offset;
+	DirectX::XMFLOAT4 colorTint;
+	bool showImGuiDemo;
 };
 

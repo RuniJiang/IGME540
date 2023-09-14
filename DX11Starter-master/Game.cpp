@@ -3,6 +3,7 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "Mesh.h"
+#include "BufferStructs.h"
 
 // This code assumes files are in "ImGui" subfolder!
 // Adjust as necessary for your own folder structure
@@ -39,6 +40,11 @@ Game::Game(HINSTANCE hInstance)
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
+
+	offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
+	colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
+	showImGuiDemo = false;
+
 }
 
 // --------------------------------------------------------
@@ -95,6 +101,23 @@ void Game::Init()
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
 
+
+	{
+		// Get size as the next multiple of 16 (instead of hardcoding a size here!)
+		unsigned int size = sizeof(VertexShaderExternalData);
+		size = (size + 15) / 16 * 16; // This will work even if the struct size changes
+
+		// Describe the constant buffer
+		D3D11_BUFFER_DESC cbDesc = {}; // Sets struct to all zeros
+		cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbDesc.ByteWidth = size; // Must be a multiple of 16
+		cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+		device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
+
+	}
+
+	// Initial the UI
 	{
 		// Initialize ImGui itself & platform/renderer backends
 		IMGUI_CHECKVERSION();
@@ -105,7 +128,6 @@ void Game::Init()
 		ImGui::StyleColorsDark();
 		//ImGui::StyleColorsLight();
 		//ImGui::StyleColorsClassic();
-
 	}
 }
 
@@ -299,6 +321,32 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	UIUpdate(deltaTime);
+	// Show the demo window
+	if (showImGuiDemo)
+	{
+		ImGui::ShowDemoWindow();
+	}
+
+
+	ImGui::Begin("Inspector"); // Everything after is part of the window
+	ImGui::TableNextColumn(); ImGui::Checkbox("Show ImGui Demo Window", &showImGuiDemo);
+
+
+	if (ImGui::CollapsingHeader("Stats"))
+	{
+		ImGui::BulletText("Framerate: %f fps", ImGui::GetIO().Framerate);
+		ImGui::BulletText("Window Dimension: %dx%d", windowWidth, windowHeight);
+	}
+
+	if (ImGui::CollapsingHeader("Modification"))
+	{
+		ImGui::DragFloat3("Custom Offset", &offset.x, 0.01f);
+		ImGui::ColorEdit4("Color Tint", &colorTint.x);
+	}
+
+
+
+	ImGui::End(); // Ends the current window
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -320,6 +368,23 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		// Clear the depth buffer (resets per-pixel occlusion information)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+
+	// Constant Buffer
+	{
+		VertexShaderExternalData vsData;
+		vsData.colorTint = colorTint;
+		vsData.offset = offset;
+
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+		context->Unmap(vsConstantBuffer.Get(), 0);
+
+		context->VSSetConstantBuffers(
+			0, // Which slot (register) to bind the buffer to?
+			1, // How many are we activating? Can do multiple at once
+			vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
 	}
 
 	// FOR(auto& m : meshes)
@@ -369,7 +434,7 @@ void Game::UIUpdate(float deltaTime)
 	Input& input = Input::GetInstance();
 	input.SetKeyboardCapture(io.WantCaptureKeyboard);
 	input.SetMouseCapture(io.WantCaptureMouse);
-	// Show the demo window
-	ImGui::ShowDemoWindow();
+
+
 }
 
