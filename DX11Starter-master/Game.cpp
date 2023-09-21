@@ -41,7 +41,7 @@ Game::Game(HINSTANCE hInstance)
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
 
-	offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
+	speed = 0.2f;
 	colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
 	showImGuiDemo = false;
 
@@ -303,6 +303,8 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(verticesTable, ARRAYSIZE(verticesTable), indicesTable, ARRAYSIZE(indicesTable), device, context));
 
 	objects.push_back(std::make_shared<Entity>(meshes[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[0]));
+
 	objects.push_back(std::make_shared<Entity>(meshes[1]));
 
 	objects.push_back(std::make_shared<Entity>(meshes[2]));
@@ -312,9 +314,9 @@ void Game::CreateGeometry()
 	objects.push_back(std::make_shared<Entity>(meshes[3]));
 
 	// Adjust transforms
-	objects[2]->GetTransform()->Rotate(0, 0, 0.1f);
-	/*objects[3]->GetTransform()->MoveAbsolute(-1.2f, -0.3f, 0.0f);
-	objects[4]->GetTransform()->MoveAbsolute(-0.5f, 0.1f, 0.0f);*/
+	objects[3]->GetTransform()->Rotate(0, 0, 0.1f);
+	objects[3]->GetTransform()->MoveAbsolute(1.0f, -0.3f, 0.0f);
+	objects[5]->GetTransform()->MoveAbsolute(-0.5f, 0.1f, 0.0f);
 	
 }
 
@@ -333,9 +335,22 @@ void Game::OnResize()
 
 // --------------------------------------------------------
 // Update your game here - user input, move objects, AI, etc.
-// --------------------------------------------------------
+// ------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	// Move one entity from -0.7 to 0.7 along x-axis
+	if (objects[1]->GetTransform()->GetPosition().x >= 0.7 ||
+		objects[1]->GetTransform()->GetPosition().x <= -0.7)
+	{
+		speed = -speed;
+	}
+	objects[1]->GetTransform()->MoveAbsolute(speed * deltaTime, 0, 0);
+
+	// Change the scale based on sin
+	float temp = abs(sin(totalTime));
+	objects[4]->GetTransform()->SetScale(temp, temp,temp);
+
+
 	UIUpdate(deltaTime);
 	// Show the demo window
 	if (showImGuiDemo)
@@ -348,22 +363,41 @@ void Game::Update(float deltaTime, float totalTime)
 	ImGui::TableNextColumn(); ImGui::Checkbox("Show ImGui Demo Window", &showImGuiDemo);
 
 
-	if (ImGui::CollapsingHeader("Stats"))
+	if (ImGui::TreeNode("Stats"))
 	{
 		ImGui::BulletText("Framerate: %f fps", ImGui::GetIO().Framerate);
 		ImGui::BulletText("Window Dimension: %dx%d", windowWidth, windowHeight);
+		ImGui::TreePop();
 	}
 
-	if (ImGui::CollapsingHeader("Scene Entities"))
+	if (ImGui::TreeNode("Scene Entities"))
 	{
 		for (int i = 0; i < objects.size(); i++)
 		{
-			if (ImGui::CollapsingHeader("Entity"))
+			ImGui::PushID(i);
+			if (ImGui::TreeNode("Entity Node", "Entity %d", i))
 			{
-				ImGui::DragFloat3("Custom Offset", &offset.x, 0.01f);
-				ImGui::ColorEdit4("Color Tint", &colorTint.x);
+				ImGui::Spacing();
+
+				// Transform details
+				Transform* trans = objects[i]->GetTransform();
+				XMFLOAT3 position = trans->GetPosition();
+				XMFLOAT3 rotation = trans->GetRotation();
+				XMFLOAT3 scale = trans->GetScale();
+
+				if (ImGui::DragFloat3("Position", &position.x, 0.01f)) trans->SetPosition(position);
+				if (ImGui::DragFloat3("Rotation (Radians)", &rotation.x, 0.01f)) trans->SetRotation(rotation);
+				if (ImGui::DragFloat3("Scale", &scale.x, 0.01f)) trans->SetScale(scale);
+
+				ImGui::Spacing();
+
+				ImGui::TreePop();
 			}
+			ImGui::PopID();
 		}
+
+		// Finalize the tree node
+		ImGui::TreePop();
 	}
 
 

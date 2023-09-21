@@ -4,7 +4,7 @@ using namespace DirectX;
 Transform::Transform() :
     position(0, 0, 0),
     pitchYawRoll(0, 0, 0),
-    scale(0, 0, 0)
+    scale(1, 1, 1)
 {
     matrixDirty = false;
     XMStoreFloat4x4(&worldMatrix, XMMatrixIdentity());

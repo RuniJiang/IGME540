@@ -54,7 +54,7 @@ private:
 	std::vector < std::shared_ptr<Mesh>> meshes;
 	std::vector < std::shared_ptr<Entity>> objects;
 
-	DirectX::XMFLOAT3 offset;
+	float speed;
 	DirectX::XMFLOAT4 colorTint;
 	bool showImGuiDemo;
 };

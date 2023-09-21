@@ -3,7 +3,10 @@
 
 using namespace DirectX;
 
-Entity::Entity(std::shared_ptr<Mesh> mesh) { this->mesh = mesh;}
+Entity::Entity(std::shared_ptr<Mesh> mesh)
+{ 
+	this->mesh = mesh;
+}
 std::shared_ptr<Mesh> Entity::GetMesh() { return mesh;}
 Transform* Entity::GetTransform() {	return &transform ;}
 
