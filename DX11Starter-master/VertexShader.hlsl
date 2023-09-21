@@ -17,7 +17,8 @@ cbuffer ExternalData : register(b0)
 	//  - Data packing: 
 	//        -- No vector defined in a cbuffer may cross a 16-byte boundary
 	float4 colorTint; // 4-component float vector
-	float3 offset;    // 3-component float vector
+	//float3 offset;    // 3-component float vector
+	float4x4 world;
 }
 
 // Struct representing a single vertex worth of data
@@ -73,7 +74,8 @@ VertexToPixel main( VertexShaderInput input )
 	//   which we're leaving at 1.0 for now (this is more useful when dealing with 
 	//   a perspective projection matrix, which we'll get to in the future).
 	//output.screenPosition = float4(input.localPosition, 1.0f);
-	output.screenPosition = float4(input.localPosition + offset, 1.0f);
+	//output.screenPosition = float4(input.localPosition + offset, 1.0f);
+	output.screenPosition = mul(world, float4(input.localPosition, 1.0f));
 
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer

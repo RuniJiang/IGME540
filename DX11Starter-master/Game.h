@@ -2,10 +2,13 @@
 
 #include "DXCore.h"
 #include "Mesh.h"
+#include "Entity.h"
+
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 #include <memory>
 #include <vector>
+
 
 class Game 
 	: public DXCore
@@ -49,6 +52,7 @@ private:
 
 	//Meshes
 	std::vector < std::shared_ptr<Mesh>> meshes;
+	std::vector < std::shared_ptr<Entity>> objects;
 
 	DirectX::XMFLOAT3 offset;
 	DirectX::XMFLOAT4 colorTint;

@@ -20,7 +20,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer();
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer();
 	int GetIndexCount();
-	void Draw(float deltaTime, float totalTime);
+	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;

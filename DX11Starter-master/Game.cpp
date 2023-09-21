@@ -204,7 +204,7 @@ void Game::LoadShaders()
 
 
 // --------------------------------------------------------
-// Creates the geometry we're going to draw - a single triangle for now
+// Creates the geometry we're going to draw
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
@@ -301,7 +301,23 @@ void Game::CreateGeometry()
 		0, 2, 3
 	};
 	meshes.push_back(std::make_shared<Mesh>(verticesTable, ARRAYSIZE(verticesTable), indicesTable, ARRAYSIZE(indicesTable), device, context));
+
+	objects.push_back(std::make_shared<Entity>(meshes[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[1]));
+
+	objects.push_back(std::make_shared<Entity>(meshes[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[2]));
+
+	objects.push_back(std::make_shared<Entity>(meshes[3]));
+
+	// Adjust transforms
+	objects[2]->GetTransform()->Rotate(0, 0, 0.1f);
+	/*objects[3]->GetTransform()->MoveAbsolute(-1.2f, -0.3f, 0.0f);
+	objects[4]->GetTransform()->MoveAbsolute(-0.5f, 0.1f, 0.0f);*/
+	
 }
+
 
 
 // --------------------------------------------------------
@@ -338,10 +354,16 @@ void Game::Update(float deltaTime, float totalTime)
 		ImGui::BulletText("Window Dimension: %dx%d", windowWidth, windowHeight);
 	}
 
-	if (ImGui::CollapsingHeader("Modification"))
+	if (ImGui::CollapsingHeader("Scene Entities"))
 	{
-		ImGui::DragFloat3("Custom Offset", &offset.x, 0.01f);
-		ImGui::ColorEdit4("Color Tint", &colorTint.x);
+		for (int i = 0; i < objects.size(); i++)
+		{
+			if (ImGui::CollapsingHeader("Entity"))
+			{
+				ImGui::DragFloat3("Custom Offset", &offset.x, 0.01f);
+				ImGui::ColorEdit4("Color Tint", &colorTint.x);
+			}
+		}
 	}
 
 
@@ -370,31 +392,17 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	// Constant Buffer
-	{
-		VertexShaderExternalData vsData;
-		vsData.colorTint = colorTint;
-		vsData.offset = offset;
-
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-		context->Unmap(vsConstantBuffer.Get(), 0);
-
-		context->VSSetConstantBuffers(
-			0, // Which slot (register) to bind the buffer to?
-			1, // How many are we activating? Can do multiple at once
-			vsConstantBuffer.GetAddressOf()); // Array of buffers (or the address of one)
-	}
+	
 
 	// FOR(auto& m : meshes)
 	// {
 	// m->SetBuffersAndDraw(context)
 	// }
 	//
-	for (std::shared_ptr<Mesh>& mesh : meshes)
+	for (std::shared_ptr<Entity>& object : objects)
 	{
-		mesh->Draw(deltaTime, totalTime);
+		//mesh->Draw(context);
+		object->Draw(context, vsConstantBuffer);
 	}
 
 	{
