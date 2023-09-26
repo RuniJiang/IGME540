@@ -10,10 +10,7 @@ Entity::Entity(std::shared_ptr<Mesh> mesh)
 std::shared_ptr<Mesh> Entity::GetMesh() { return mesh;}
 Transform* Entity::GetTransform() {	return &transform ;}
 
-void Entity::Draw(
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
-	std::shared_ptr<Camera> camera)
+void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer)
 {
 		VertexShaderExternalData vsData;
 		vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);

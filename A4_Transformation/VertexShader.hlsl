@@ -19,8 +19,6 @@ cbuffer ExternalData : register(b0)
 	float4 colorTint; // 4-component float vector
 	//float3 offset;    // 3-component float vector
 	float4x4 world;
-	matrix view;
-	matrix proj;
 }
 
 // Struct representing a single vertex worth of data

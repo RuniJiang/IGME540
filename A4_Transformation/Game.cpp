@@ -73,14 +73,6 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	camera = std::make_shared<Camera>(
-		0.0f, 0.0f, -5.0f,
-		5.0f,
-		1.0f,
-		XM_PIDIV4,
-		this->windowWidth / this->windowHeight
-	);
-
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later

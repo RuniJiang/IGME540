@@ -3,7 +3,6 @@
 #include "DXCore.h"
 #include "Mesh.h"
 #include "Entity.h"
-#include "Camera.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -58,7 +57,5 @@ private:
 	float speed;
 	DirectX::XMFLOAT4 colorTint;
 	bool showImGuiDemo;
-
-	std::shared_ptr<Camera> camera;
 };
 

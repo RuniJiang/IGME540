@@ -6,7 +6,6 @@
 #include <DirectXMath.h>
 #include "Mesh.h"
 #include "Transform.h"
-#include "Camera.h"
 
 class Entity
 {
@@ -16,8 +15,7 @@ public:
 	std::shared_ptr<Mesh> GetMesh();
 	Transform* GetTransform();
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, 
-		Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
-		std::shared_ptr<Camera> camera);
+		Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer);
 
 private:
 	Transform transform;
