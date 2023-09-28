@@ -18,6 +18,8 @@ void Entity::Draw(
 		VertexShaderExternalData vsData;
 		vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
 		vsData.worldMatrix = transform.GetWorldMatrix();
+		vsData.viewMatrix = camera->GetView();
+		vsData.projMatrix = camera->GetProj();
 
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);

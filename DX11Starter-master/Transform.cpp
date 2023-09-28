@@ -38,15 +38,28 @@ void Transform::MoveRelative(float x, float y, float z)
     XMVECTOR movement = XMVectorSet(x, y, z, 0);
     XMVECTOR rotQuat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&pitchYawRoll));
 
-    //
+    // Apply rotation to movement vector
     XMVECTOR relativeDir = XMVector3Rotate(movement, rotQuat);
 
+    // Store the movement and apply back to postion
     XMStoreFloat3(&position, XMLoadFloat3(&position) + relativeDir);
     matrixDirty = true;
 
 }
 void Transform::MoveRelative(DirectX::XMFLOAT3 offset)
 {
+
+    // Create a direction vector from the input and
+    // rotate to match our current orientation
+    XMVECTOR movement = XMLoadFloat3(&offset);
+    XMVECTOR rotQuat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&pitchYawRoll));
+
+    // Apply rotation to movement vector
+    XMVECTOR relativeDir = XMVector3Rotate(movement, rotQuat);
+
+    // Store the movement and apply back to postion
+    XMStoreFloat3(&position, XMLoadFloat3(&position) + relativeDir);
+    matrixDirty = true;
 }
 
 

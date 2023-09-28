@@ -73,19 +73,12 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	camera = std::make_shared<Camera>(
-		0.0f, 0.0f, -5.0f,
-		5.0f,
-		1.0f,
-		XM_PIDIV4,
-		this->windowWidth / this->windowHeight
-	);
-
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+	CreateCameras();
 	
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -328,6 +321,36 @@ void Game::CreateGeometry()
 	
 }
 
+// --------------------------------------------------------
+// Create the cameras
+// --------------------------------------------------------
+void Game::CreateCameras()
+{
+	cameras.push_back(std::make_shared<Camera>(
+		0.0f, 0.0f, -5.0f,
+		5.0f,
+		1.0f,
+		XM_PIDIV4,
+		this->windowWidth / this->windowHeight,
+		0.1f,
+		1000.0f,
+		true
+		));
+
+	cameras.push_back(std::make_shared<Camera>(
+		1.0f, 0.0f, -10.0f,
+		2.0f,
+		0.5f,
+		XM_PI / 8,
+		this->windowWidth / this->windowHeight,
+		3.0f,
+		1000.0f,
+		true
+		));
+
+	activedCamera = cameras[0];
+}
+
 
 
 // --------------------------------------------------------
@@ -337,6 +360,9 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::OnResize()
 {
+	for(auto& camera : cameras)
+	camera->UpdateProjectionMatrix(this->windowWidth / this->windowHeight);
+
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 }
@@ -346,6 +372,8 @@ void Game::OnResize()
 // ------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	activedCamera->Update(deltaTime);
+
 	// Move one entity from -0.7 to 0.7 along x-axis
 	if (objects[1]->GetTransform()->GetPosition().x >= 0.7 ||
 		objects[1]->GetTransform()->GetPosition().x <= -0.7)
@@ -360,58 +388,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 
 	UIUpdate(deltaTime);
-	// Show the demo window
-	if (showImGuiDemo)
-	{
-		ImGui::ShowDemoWindow();
-	}
-
-
-	ImGui::Begin("Inspector"); // Everything after is part of the window
-	ImGui::TableNextColumn(); ImGui::Checkbox("Show ImGui Demo Window", &showImGuiDemo);
-
-
-	if (ImGui::TreeNode("Stats"))
-	{
-		ImGui::BulletText("Framerate: %f fps", ImGui::GetIO().Framerate);
-		ImGui::BulletText("Window Dimension: %dx%d", windowWidth, windowHeight);
-		ImGui::TreePop();
-	}
-
-	if (ImGui::TreeNode("Scene Entities"))
-	{
-		for (int i = 0; i < objects.size(); i++)
-		{
-			ImGui::PushID(i);
-			if (ImGui::TreeNode("Entity Node", "Entity %d", i))
-			{
-				ImGui::Spacing();
-
-				// Transform details
-				Transform* trans = objects[i]->GetTransform();
-				XMFLOAT3 position = trans->GetPosition();
-				XMFLOAT3 rotation = trans->GetRotation();
-				XMFLOAT3 scale = trans->GetScale();
-
-				if (ImGui::DragFloat3("Position", &position.x, 0.01f)) trans->SetPosition(position);
-				if (ImGui::DragFloat3("Rotation (Radians)", &rotation.x, 0.01f)) trans->SetRotation(rotation);
-				if (ImGui::DragFloat3("Scale", &scale.x, 0.01f)) trans->SetScale(scale);
-
-				ImGui::Spacing();
-
-				ImGui::TreePop();
-			}
-			ImGui::PopID();
-		}
-
-		// Finalize the tree node
-		ImGui::TreePop();
-	}
-
-
-
-	ImGui::End(); // Ends the current window
-
+	
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
@@ -444,7 +421,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	for (std::shared_ptr<Entity>& object : objects)
 	{
 		//mesh->Draw(context);
-		object->Draw(context, vsConstantBuffer);
+		object->Draw(context, vsConstantBuffer, activedCamera);
 	}
 
 	{
@@ -485,6 +462,144 @@ void Game::UIUpdate(float deltaTime)
 	input.SetKeyboardCapture(io.WantCaptureKeyboard);
 	input.SetMouseCapture(io.WantCaptureMouse);
 
+	// Show the demo window
+	if (showImGuiDemo)
+	{
+		ImGui::ShowDemoWindow();
+	}
+
+
+	ImGui::Begin("Inspector"); // Everything after is part of the window
+	ImGui::TableNextColumn(); ImGui::Checkbox("Show ImGui Demo Window", &showImGuiDemo);
+
+	// === Stats of the program === //
+	if (ImGui::TreeNode("Stats"))
+	{
+		ImGui::BulletText("Framerate: %f fps", ImGui::GetIO().Framerate);
+		ImGui::BulletText("Window Dimension: %dx%d", windowWidth, windowHeight);
+		ImGui::TreePop();
+	}
+	// === Controls === //
+	if (ImGui::TreeNode("Controls"))
+	{
+		ImGui::Spacing();
+		ImGui::Text("Camera Movement:");           ImGui::SameLine(200); ImGui::Text("WASD, X, Space");
+		ImGui::Text("Camera Rotation:");           ImGui::SameLine(200); ImGui::Text("Left Click & Drag");
+		ImGui::Text("Camera move speed up:");      ImGui::SameLine(200); ImGui::Text("Left Shift");
+		ImGui::Text("Camera move slow down:");     ImGui::SameLine(200); ImGui::Text("Left Ctrl");
+		ImGui::Spacing();
+
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Cameras"))
+	{
+		// Select Camera
+		static int selected = 0;
+		for (int n = 0; n < cameras.size(); n++)
+		{
+			char buf[32];
+			sprintf_s(buf, "Camera %d", n);
+			if (ImGui::Selectable(buf, selected == n))
+			{
+				selected = n;
+				activedCamera = cameras[n];
+			}
+
+		}
+
+		// Show UI for current camera
+		CameraUI(activedCamera);
+
+		// Finalize the tree node
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Scene Entities"))
+	{
+		for (int i = 0; i < objects.size(); i++)
+		{
+			ImGui::PushID(i);
+			if (ImGui::TreeNode("Entity Node", "Entity %d", i))
+			{
+				ImGui::Spacing();
+
+				// Transform details
+				Transform* trans = objects[i]->GetTransform();
+				XMFLOAT3 position = trans->GetPosition();
+				XMFLOAT3 rotation = trans->GetRotation();
+				XMFLOAT3 scale = trans->GetScale();
+
+				if (ImGui::DragFloat3("Position", &position.x, 0.01f)) trans->SetPosition(position);
+				if (ImGui::DragFloat3("Rotation (Radians)", &rotation.x, 0.01f)) trans->SetRotation(rotation);
+				if (ImGui::DragFloat3("Scale", &scale.x, 0.01f)) trans->SetScale(scale);
+
+				ImGui::Spacing();
+
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+
+		// Finalize the tree node
+		ImGui::TreePop();
+	}
+
+
+
+	ImGui::End(); // Ends the current window
+
 
 }
 
+void Game::CameraUI(std::shared_ptr<Camera> cam)
+{
+	ImGui::Spacing();
+
+	// Transform details
+	XMFLOAT3 pos = cam->GetTransform()->GetPosition();
+	XMFLOAT3 rot = cam->GetTransform()->GetRotation();
+
+	if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
+		cam->GetTransform()->SetPosition(pos);
+	if (ImGui::DragFloat3("Rotation (Radians)", &rot.x, 0.01f))
+		cam->GetTransform()->SetRotation(rot);
+	ImGui::Spacing();
+
+	// Clip planes
+	float nearClip = cam->GetNearClipDis();
+	float farClip = cam->GetFarClipDis();
+	float fov = cam->GetFov();
+	if (ImGui::DragFloat("Near Clip Distance", &nearClip, 0.01f, 0.001f, 1.0f))
+		cam->SetNearClipDis(nearClip);
+	if (ImGui::DragFloat("Far Clip Distance", &farClip, 1.0f, 10.0f, 1500.0f))
+		cam->SetFarClipDis(farClip);
+	if (ImGui::DragFloat("Field of View", &fov, 0.01f, 0.15f, 1.0f))
+		cam->SetFov(fov);
+
+	// Perspective/Orthographic radio button
+	bool isPerspective = activedCamera->GetisPerspective();
+	if (ImGui::RadioButton("Perspective", isPerspective)) 
+	{
+		activedCamera->SetisPerspective(true);
+	} ImGui::SameLine();
+	if (ImGui::RadioButton("Orthograhphic", !isPerspective)) 
+	{
+		activedCamera->SetisPerspective(false);
+	} 
+
+	// Display specific menu for Perspective/orthographic view
+	if (isPerspective)
+	{
+		float fov = cam->GetFov() * 180.0f / XM_PI;
+		if (ImGui::SliderFloat("Field of View (Degrees)", &fov, 0.01f, 180.0f))
+		cam->SetFov(fov * XM_PI / 180.0f); // Back to radians
+	}
+	else
+	{
+		float wid = cam->GetOrthographicWidth();
+		if (ImGui::SliderFloat("Orthographic Width", &wid, 1.0f, 10.0f))
+		cam->SetOrthographicWidth(wid);
+	}
+
+	ImGui::Spacing();
+}

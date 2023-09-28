@@ -77,8 +77,12 @@ VertexToPixel main( VertexShaderInput input )
 	//   a perspective projection matrix, which we'll get to in the future).
 	//output.screenPosition = float4(input.localPosition, 1.0f);
 	//output.screenPosition = float4(input.localPosition + offset, 1.0f);
-	output.screenPosition = mul(world, float4(input.localPosition, 1.0f));
+	//output.screenPosition = mul(world, float4(input.localPosition, 1.0f));
 
+	// Mutiply the three matrices together first
+	matrix wvp = mul(proj, mul(view, world));
+	output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
+	
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer
 	// - We don't need to alter it here, but we do need to send it to the pixel shader

@@ -34,6 +34,9 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders(); 
 	void CreateGeometry();
+	void CreateCameras();
+
+	void CameraUI(std::shared_ptr<Camera> cam);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -59,6 +62,7 @@ private:
 	DirectX::XMFLOAT4 colorTint;
 	bool showImGuiDemo;
 
-	std::shared_ptr<Camera> camera;
+	std::vector<std::shared_ptr<Camera>> cameras;
+	std::shared_ptr<Camera> activedCamera;
 };
 
