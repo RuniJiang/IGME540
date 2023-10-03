@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "Camera.h"
+#include "SimpleShader.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -60,5 +61,8 @@ private:
 	bool showImGuiDemo;
 
 	std::shared_ptr<Camera> camera;
+
+	// Shaders and shader-related constructs
+	//std::shared_ptr<SimpleShader>
 };
 
