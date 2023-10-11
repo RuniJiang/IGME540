@@ -13,6 +13,11 @@ Entity::Entity(
 std::shared_ptr<Mesh> Entity::GetMesh() { return mesh;}
 Transform* Entity::GetTransform() {	return &transform ;}
 
+std::shared_ptr<Material> Entity::GetMaterial()
+{
+	return std::shared_ptr<Material>();
+}
+
 void Entity::SetMaterial(std::shared_ptr<Material> material)
 {
 }
