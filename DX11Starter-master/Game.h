@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "Camera.h"
+#include "SimpleShader.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -62,7 +63,9 @@ private:
 	DirectX::XMFLOAT4 colorTint;
 	bool showImGuiDemo;
 
-	std::vector<std::shared_ptr<Camera>> cameras;
-	std::shared_ptr<Camera> activedCamera;
+	std::shared_ptr<Camera> camera;
+
+	// Shaders and shader-related constructs
+	//std::shared_ptr<SimpleShader>
 };
 
