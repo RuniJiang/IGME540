@@ -16,6 +16,9 @@ public:
 
 	std::shared_ptr<Mesh> GetMesh();
 	Transform* GetTransform();
+	std::shared_ptr<Material> GetMaterial();
+	void SetMaterial(std::shared_ptr<Material> material);
+
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, 
 		std::shared_ptr<Camera> camera);
 

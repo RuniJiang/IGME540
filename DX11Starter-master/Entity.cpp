@@ -13,6 +13,10 @@ Entity::Entity(
 std::shared_ptr<Mesh> Entity::GetMesh() { return mesh;}
 Transform* Entity::GetTransform() {	return &transform ;}
 
+void Entity::SetMaterial(std::shared_ptr<Material> material)
+{
+}
+
 void Entity::Draw(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, 
 	std::shared_ptr<Camera> camera)

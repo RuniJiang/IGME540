@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "Camera.h"
+#include "Material.h"
 #include "SimpleShader.h"
 
 #include <DirectXMath.h>
@@ -51,21 +52,19 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
+	std::shared_ptr<SimplePixelShader> pixelShader;
 
 	//Meshes
 	std::vector < std::shared_ptr<Mesh>> meshes;
 	std::vector < std::shared_ptr<Entity>> objects;
+	std::vector < std::shared_ptr<Material>> materials;
 
 	float speed;
 	DirectX::XMFLOAT4 colorTint;
 	bool showImGuiDemo;
 
-	std::shared_ptr<Camera> camera;
-
-	// Shaders and shader-related constructs
-	//std::shared_ptr<SimpleShader>
+	std::vector<std::shared_ptr<Camera>> cameras;
+	std::shared_ptr<Camera> activedCamera;
 };
 
