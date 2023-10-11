@@ -4,7 +4,6 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "Camera.h"
-#include "Material.h"
 #include "SimpleShader.h"
 
 #include <DirectXMath.h>
@@ -48,7 +47,8 @@ private:
 	// Buffers to hold actual geometry data
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
-
+	
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 
 	// Shaders and shader-related constructs
 	std::shared_ptr<SimpleVertexShader> vertexShader;
@@ -57,7 +57,6 @@ private:
 	//Meshes
 	std::vector < std::shared_ptr<Mesh>> meshes;
 	std::vector < std::shared_ptr<Entity>> objects;
-	std::vector < std::shared_ptr<Material>> materials;
 
 	float speed;
 	DirectX::XMFLOAT4 colorTint;
