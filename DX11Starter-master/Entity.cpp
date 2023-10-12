@@ -24,12 +24,16 @@ void Entity::Draw(
 		material->GetPixelShader()->SetShader();
 
 		std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
-		vs->SetFloat4("colorTint", material->GetColorTint()); // Strings here MUST
-		vs->SetMatrix4x4("world", transform.GetWorldMatrix()); // match variable
+
+		vs->SetMatrix4x4("world", transform.GetWorldMatrix()); // // Strings here MUST match variable
 		vs->SetMatrix4x4("view", camera->GetView()); // names in your
-		vs->SetMatrix4x4("projection", camera->GetProj()); // shader’s cbuffer
+		vs->SetMatrix4x4("proj", camera->GetProj()); // shader’s cbuffer
 
 		vs->CopyAllBufferData();
+
+		std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
+		ps->SetFloat4("colorTint", material->GetColorTint()); 
+		ps->CopyAllBufferData();
 
 		mesh->Draw(context);
 }

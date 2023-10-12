@@ -5,6 +5,7 @@
 #include "Entity.h"
 #include "Camera.h"
 #include "SimpleShader.h"
+#include "Material.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -57,6 +58,7 @@ private:
 	//Meshes
 	std::vector < std::shared_ptr<Mesh>> meshes;
 	std::vector < std::shared_ptr<Entity>> objects;
+	std::vector < std::shared_ptr<Material>> materials;
 
 	float speed;
 	DirectX::XMFLOAT4 colorTint;

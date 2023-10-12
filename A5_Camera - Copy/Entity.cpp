@@ -3,18 +3,32 @@
 
 using namespace DirectX;
 
-Entity::Entity(std::shared_ptr<Mesh> mesh)
+Entity::Entity(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
 { 
 	this->mesh = mesh;
+	this->material = material;
 }
 std::shared_ptr<Mesh> Entity::GetMesh() { return mesh;}
 Transform* Entity::GetTransform() {	return &transform ;}
+
+std::shared_ptr<Material> Entity::GetMaterial()
+{
+	return material;
+}
+
+void Entity::SetMaterial(std::shared_ptr<Material> material)
+{
+	this->material = material;
+}
 
 void Entity::Draw(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
 	std::shared_ptr<Camera> camera)
 {
+	material->GetVertexShader()->SetShader();
+	material->GetPixelShader()->SetShader();
+
 		VertexShaderExternalData vsData;
 		vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
 		vsData.worldMatrix = transform.GetWorldMatrix();
