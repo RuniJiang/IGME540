@@ -8,7 +8,16 @@
 //           V           V  all constant buffers are bound to b registers, 0 is an index (not  arbitrary) 
 cbuffer ExternalData : register(b0)
 {
-
+	// A single constant buffer can hold up to 4096 elements
+	// Where each element is either 1, 2, 3 or 4- component vector
+	// Orders matter
+	//  - Defining how we intend to interpret a bunch of numbers sitting n memory
+	//  - Match that exact same layout over C++ to allow us to copy that dat a to GPU with a 
+	//    single D3D comman -> more efficient
+	//  - Data packing: 
+	//        -- No vector defined in a cbuffer may cross a 16-byte boundary
+	float4 colorTint; // 4-component float vector
+	//float3 offset;    // 3-component float vector
 	float4x4 world;
 	matrix view;
 	matrix proj;
@@ -27,8 +36,7 @@ struct VertexShaderInput
 	//  |    |                |
 	//  v    v                v
 	float3 localPosition	: POSITION;     // XYZ position
-	float3 normal           : NORMAL;
-	float2 uv               : TEXCOORD;
+	float4 color			: COLOR;        // RGBA color
 };
 
 // Struct representing the data we're sending down the pipeline
@@ -44,7 +52,7 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-	float2 uv : TEXCOORD;
+	float4 color			: COLOR;        // RGBA color
 };
 
 // --------------------------------------------------------
@@ -75,8 +83,11 @@ VertexToPixel main( VertexShaderInput input )
 	matrix wvp = mul(proj, mul(view, world));
 	output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
 	
-	
-	output.uv = input.uv;
+	// Pass the color through 
+	// - The values will be interpolated per-pixel by the rasterizer
+	// - We don't need to alter it here, but we do need to send it to the pixel shader
+	//output.color = input.color;
+	output.color = input.color * colorTint;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

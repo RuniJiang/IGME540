@@ -4,8 +4,8 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "Camera.h"
-#include "Material.h"
 #include "SimpleShader.h"
+#include "Material.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -48,13 +48,12 @@ private:
 	// Buffers to hold actual geometry data
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
-
+	
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 
 	// Shaders and shader-related constructs
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 	std::shared_ptr<SimplePixelShader> pixelShader;
-	std::shared_ptr<SimplePixelShader> customPS;
-	std::shared_ptr<SimplePixelShader> customPS2;
 
 	//Meshes
 	std::vector < std::shared_ptr<Mesh>> meshes;
