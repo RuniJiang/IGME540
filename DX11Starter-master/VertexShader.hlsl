@@ -9,7 +9,8 @@
 cbuffer ExternalData : register(b0)
 {
 
-	float4x4 world;
+	matrix world;
+	matrix worldInvTranspose;
 	matrix view;
 	matrix proj;
 }
@@ -43,8 +44,11 @@ VertexToPixel main( VertexShaderInput input )
 	matrix wvp = mul(proj, mul(view, world));
 	output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
 	
-	
 	output.uv = input.uv;
+
+	output.normal = mul((float3x3)worldInvTranspose, input.normal);
+	output.worldPosition = mul(world, float4(input.localPosition, 1)).xyz;
+
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

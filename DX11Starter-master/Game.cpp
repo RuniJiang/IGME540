@@ -41,7 +41,8 @@ Game::Game(HINSTANCE hInstance)
 #endif
 
 	speed = 0.2f;
-	colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
+	colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	ambientColor = XMFLOAT3(0.1f, 0.1f, 0.25f);
 	showImGuiDemo = false;
 
 }
@@ -137,9 +138,9 @@ void Game::CreateGeometry()
 	XMFLOAT4 blue	= XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	XMFLOAT4 gray   = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	XMFLOAT4 brown  = XMFLOAT4(0.7f, 0.5f, 0.5f, 1.0f);
-	XMFLOAT4 white  = XMFLOAT4(1.0f, 1.5f, 1.0f, 1.0f);
+	XMFLOAT4 white  = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	materials.push_back(std::make_shared<Material>(red, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
 	materials.push_back(std::make_shared<Material>(green, 0.5, vertexShader, customPS));
 	materials.push_back(std::make_shared<Material>(blue, 0.5, vertexShader, customPS2));
 
@@ -211,7 +212,7 @@ void Game::CreateCameras()
 void Game::OnResize()
 {
 	for(auto& camera : cameras)
-	camera->UpdateProjectionMatrix(this->windowWidth / this->windowHeight);
+	camera->UpdateProjectionMatrix((float)this->windowWidth / this->windowHeight);
 
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
@@ -272,6 +273,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		//mesh->Draw(context);
 		object->GetMaterial()->GetPixelShader()->SetFloat("time", totalTime);
+		object->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
 		object->Draw(context, activedCamera);
 	}
 

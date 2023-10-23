@@ -26,6 +26,7 @@ void Entity::Draw(
 		std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
 
 		vs->SetMatrix4x4("world", transform.GetWorldMatrix()); // // Strings here MUST match variable
+		vs->SetMatrix4x4("worldInvTranspose", transform.GetWorldInverseTransposeMatrix());
 		vs->SetMatrix4x4("view", camera->GetView()); // names in your
 		vs->SetMatrix4x4("proj", camera->GetProj()); // shader�s cbuffer
 

@@ -5,6 +5,7 @@ cbuffer ExternalData : register(b0)
 	float4 colorTint; // 4-component float vector
 	float3 cameraPosition;
 	float roughness;
+	float3 ambient;
 }
 
 
@@ -19,6 +20,9 @@ cbuffer ExternalData : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	return float4(roughness.rrr, 1); // Replicates value x3 (this is temporary)
+	input.normal = normalize(input.normal);
+	return float4(input.normal, 1);
+	//return colorTint * float4(ambient ,1);
+	//return float4(roughness.rrr, 1); // Replicates value x3 (this is temporary)
 	//return float4(input.uv, 0, 1); // Adjust for your variable name
 }

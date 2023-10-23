@@ -62,7 +62,10 @@ private:
 	std::vector < std::shared_ptr<Material>> materials;
 
 	float speed;
+
 	DirectX::XMFLOAT4 colorTint;
+	DirectX::XMFLOAT3 ambientColor;
+
 	bool showImGuiDemo;
 
 	std::vector<std::shared_ptr<Camera>> cameras;
