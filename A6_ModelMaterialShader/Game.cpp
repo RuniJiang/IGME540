@@ -3,7 +3,6 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "Mesh.h"
-#include "BufferStructs.h"
 
 // This code assumes files are in "ImGui" subfolder!
 // Adjust as necessary for your own folder structure
@@ -92,22 +91,6 @@ void Game::Init()
 
 	}
 
-
-	{
-		// Get size as the next multiple of 16 (instead of hardcoding a size here!)
-		unsigned int size = sizeof(VertexShaderExternalData);
-		size = (size + 15) / 16 * 16; // This will work even if the struct size changes
-
-		// Describe the constant buffer
-		D3D11_BUFFER_DESC cbDesc = {}; // Sets struct to all zeros
-		cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cbDesc.ByteWidth = size; // Must be a multiple of 16
-		cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-		device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
-
-	}
-
 	// Initial the UI
 	{
 		// Initialize ImGui itself & platform/renderer backends
@@ -136,9 +119,11 @@ void Game::LoadShaders()
 		FixPath(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context,
 		FixPath(L"PixelShader.cso").c_str());
+	customPS = std::make_shared<SimplePixelShader>(device, context,
+		FixPath(L"CustomPS.cso").c_str());
+	customPS2 = std::make_shared<SimplePixelShader>(device, context,
+		FixPath(L"CustomPS2.cso").c_str());
 }
-
-
 
 // --------------------------------------------------------
 // Creates the geometry we're going to draw
@@ -155,110 +140,35 @@ void Game::CreateGeometry()
 	XMFLOAT4 white  = XMFLOAT4(1.0f, 1.5f, 1.0f, 1.0f);
 
 	materials.push_back(std::make_shared<Material>(red, vertexShader, pixelShader));
-	materials.push_back(std::make_shared<Material>(green, vertexShader, pixelShader));
-	materials.push_back(std::make_shared<Material>(blue, vertexShader, pixelShader));
-
-	// Set up the vertices of the triangle we would like to draw
-	// - We're going to copy this array, exactly as it exists in CPU memory
-	//    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
-	// - Note: Since we don't have a camera or really any concept of
-	//    a "3d world" yet, we're simply describing positions within the
-	//    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
-	// - This means (0,0) is at the very center of the screen.
-	// - These are known as "Normalized Device Coordinates" or "Homogeneous 
-	//    Screen Coords", which are ways to describe a position without
-	//    knowing the exact size (in pixels) of the image/window/etc.  
-	// - Long story short: Resizing the window also resizes the triangle,
-	//    since we're describing the triangle in terms of the window itself
-	Vertex vertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
-		{ XMFLOAT3(+0.2f, -0.1f, +0.0f), green },
-		{ XMFLOAT3(-0.2f, -0.1f, +0.0f), blue },
-	};
-
-	// Set up indices, which tell us which vertices to use and in which order
-	// - This is redundant for just 3 vertices, but will be more useful later
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-	unsigned int indices[] = { 0, 1, 2 };
-
-	meshes.push_back(std::make_shared<Mesh>(vertices, ARRAYSIZE(vertices), indices, ARRAYSIZE(indices), device, context));
-
-	// Second Mesh
-	Vertex verticesDice[] =
-	{
-		{ XMFLOAT3(+0.4f, +0.45f, +0.0f), white },
-		{ XMFLOAT3(+0.53f, +0.35f, +0.0f), gray},
-		{ XMFLOAT3(+0.4f, +0.25f, +0.0f), gray},
-		{ XMFLOAT3(+0.53f, +0.15f, +0.0f), white},
-		{ XMFLOAT3(+0.4f, +0.0f, +0.0f), gray},
-		{ XMFLOAT3(+0.27f, +0.15f, +0.0f), white},
-		{ XMFLOAT3(+0.27f, +0.35f, +0.0f), gray},
-	};
-	unsigned int indicesDice[] =
-	{
-		3, 2, 1, // if i set this to 1,2,3, it will not work
-		0, 1, 6,
-		1, 2, 6,
-		2, 3, 4,
-		2, 4, 5,
-		2, 5, 6,
-	};
-	meshes.push_back(std::make_shared<Mesh>(verticesDice, ARRAYSIZE(verticesDice), indicesDice, ARRAYSIZE(indicesDice), device, context));
-
-	// Third Mesh
-	Vertex verticeD12[] =
-	{
-		{ XMFLOAT3(-0.4f, +0.0f, +0.0f), red },
-		{ XMFLOAT3(-0.3f, -0.1f, +0.0f), white},
-		{ XMFLOAT3(-0.3f, -0.3f, +0.0f), red},
-		{ XMFLOAT3(-0.4f, -0.4f, +0.0f), white},
-		{ XMFLOAT3(-0.5f, -0.3f, +0.0f), red},
-		{ XMFLOAT3(-0.5f, -0.1f, +0.0f), white},
-	};
-	unsigned int indicesD12[] =
-	{
-		0, 1, 5,
-		1, 3, 5,
-		1, 2, 3,
-		3, 4, 5,
-	};
-	meshes.push_back(std::make_shared<Mesh>(verticeD12, ARRAYSIZE(verticeD12), indicesD12, ARRAYSIZE(indicesD12), device, context));
+	materials.push_back(std::make_shared<Material>(green, vertexShader, customPS));
+	materials.push_back(std::make_shared<Material>(blue, vertexShader, customPS2));
 
 
-	// Fourth Mesh
-	Vertex verticesTable[] =
-	{
-		{ XMFLOAT3(-0.25f, +0.4f, +0.0f), gray},
-		{ XMFLOAT3(+0.7f, +0.4f, +0.0f), gray},
-		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), gray },
-		{ XMFLOAT3(-0.7f, -0.5f, +0.0f), gray},
-	};
-	unsigned int indicesTable[] =
-	{
-		0, 1, 2,
-		0, 2, 3
-	};
-	meshes.push_back(std::make_shared<Mesh>(verticesTable, ARRAYSIZE(verticesTable), indicesTable, ARRAYSIZE(indicesTable), device, context));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/quad.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/quad_double_sided.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device));
 
-	objects.push_back(std::make_shared<Entity>(meshes[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[0]));
-
-	objects.push_back(std::make_shared<Entity>(meshes[1]));
-
-	objects.push_back(std::make_shared<Entity>(meshes[2]));
-	objects.push_back(std::make_shared<Entity>(meshes[2]));
-	objects.push_back(std::make_shared<Entity>(meshes[2]));
-
-	objects.push_back(std::make_shared<Entity>(meshes[3]));
+	objects.push_back(std::make_shared<Entity>(meshes[0], materials[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[1], materials[1]));
+	objects.push_back(std::make_shared<Entity>(meshes[2], materials[1]));
+	objects.push_back(std::make_shared<Entity>(meshes[3], materials[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[4], materials[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[6], materials[2]));
 
 	// Adjust transforms
-	objects[3]->GetTransform()->Rotate(0, 0, 0.1f);
-	objects[3]->GetTransform()->MoveAbsolute(1.0f, -0.3f, 0.0f);
-	objects[5]->GetTransform()->MoveAbsolute(-0.5f, 0.1f, 0.0f);
-	
+	objects[0]->GetTransform()->MoveAbsolute(-9, 0, 0);
+	objects[1]->GetTransform()->MoveAbsolute(-6, 0, 0);
+	objects[2]->GetTransform()->MoveAbsolute(-3, 0, 0);
+	objects[3]->GetTransform()->MoveAbsolute(0, 0, 0);
+	objects[4]->GetTransform()->MoveAbsolute(3, 0, 0);
+	objects[5]->GetTransform()->MoveAbsolute(6, 0, 0);
+	objects[6]->GetTransform()->MoveAbsolute(9, 0, 0);
+
 }
 
 // --------------------------------------------------------
@@ -267,22 +177,22 @@ void Game::CreateGeometry()
 void Game::CreateCameras()
 {
 	cameras.push_back(std::make_shared<Camera>(
-		0.0f, 0.0f, -5.0f,
+		0.0f, 2.0f, -5.0f,
 		5.0f,
 		1.0f,
 		XM_PIDIV4,
-		this->windowWidth / this->windowHeight,
+		(float) this->windowWidth / this->windowHeight,
 		0.1f,
 		1000.0f,
 		true
 		));
 
 	cameras.push_back(std::make_shared<Camera>(
-		1.0f, 0.0f, -10.0f,
+		1.0f, 2.0f, -10.0f,
 		2.0f,
 		0.5f,
 		XM_PI / 8,
-		this->windowWidth / this->windowHeight,
+		(float) this->windowWidth / this->windowHeight,
 		3.0f,
 		1000.0f,
 		true
@@ -361,7 +271,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	for (std::shared_ptr<Entity>& object : objects)
 	{
 		//mesh->Draw(context);
-		object->Draw(context, vsConstantBuffer, activedCamera);
+		object->GetMaterial()->GetPixelShader()->SetFloat("time", totalTime);
+		object->Draw(context, activedCamera);
 	}
 
 	{
@@ -468,11 +379,12 @@ void Game::UIUpdate(float deltaTime)
 				XMFLOAT3 position = trans->GetPosition();
 				XMFLOAT3 rotation = trans->GetRotation();
 				XMFLOAT3 scale = trans->GetScale();
+				XMFLOAT4 colorTint = objects[i]->GetMaterial()->GetColorTint();
 
 				if (ImGui::DragFloat3("Position", &position.x, 0.01f)) trans->SetPosition(position);
 				if (ImGui::DragFloat3("Rotation (Radians)", &rotation.x, 0.01f)) trans->SetRotation(rotation);
 				if (ImGui::DragFloat3("Scale", &scale.x, 0.01f)) trans->SetScale(scale);
-
+				if (ImGui::ColorEdit4("ColorTint", &colorTint.x)) objects[i]->GetMaterial()->SetColorTint(colorTint);
 				ImGui::Spacing();
 
 				ImGui::TreePop();

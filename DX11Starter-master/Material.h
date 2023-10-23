@@ -9,6 +9,7 @@ class Material
 public:
 
 	Material(DirectX::XMFLOAT4 colorTint,
+		float roughness,
 		std::shared_ptr<SimpleVertexShader> vs,
 		std::shared_ptr<SimplePixelShader> ps);
 
@@ -22,6 +23,7 @@ public:
 private:
 	
 	DirectX::XMFLOAT4 colorTint;
+	float roughness;
 	std::shared_ptr<SimpleVertexShader> vs;
 	std::shared_ptr<SimplePixelShader> ps;
 };

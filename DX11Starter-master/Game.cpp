@@ -139,9 +139,9 @@ void Game::CreateGeometry()
 	XMFLOAT4 brown  = XMFLOAT4(0.7f, 0.5f, 0.5f, 1.0f);
 	XMFLOAT4 white  = XMFLOAT4(1.0f, 1.5f, 1.0f, 1.0f);
 
-	materials.push_back(std::make_shared<Material>(red, vertexShader, pixelShader));
-	materials.push_back(std::make_shared<Material>(green, vertexShader, customPS));
-	materials.push_back(std::make_shared<Material>(blue, vertexShader, customPS2));
+	materials.push_back(std::make_shared<Material>(red, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(green, 0.5, vertexShader, customPS));
+	materials.push_back(std::make_shared<Material>(blue, 0.5, vertexShader, customPS2));
 
 
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device));

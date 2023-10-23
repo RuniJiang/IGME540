@@ -1,10 +1,15 @@
-#include "ShaderIncludes.hlsli"
 cbuffer ExternalData : register(b0)
 {
     float4 colorTint; // 4-component float vector
     float time;
 }
 
+// Struct representing the data we expect to receive from earlier pipeline stages
+struct VertexToPixel
+{
+    float4 screenPosition : SV_POSITION;
+    float2 uv : TEXCOORD0; // Use TEXCOORD0 for UV
+};
 
 float random(float2 s)
 {

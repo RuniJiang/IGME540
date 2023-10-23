@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include "Vertex.h"
 #include <wrl/client.h> 
+#include <string>
 
 class Mesh
 {
@@ -15,6 +16,10 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Device> device,
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
 
+	Mesh(
+		const std::wstring& filename,
+		Microsoft::WRL::ComPtr<ID3D11Device> device);
+
 	~Mesh();
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer();
@@ -23,6 +28,8 @@ public:
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
 
 private:
+	void CreateBuffer(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, Microsoft::WRL::ComPtr<ID3D11Device> device);
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 

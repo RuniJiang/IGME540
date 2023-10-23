@@ -20,12 +20,11 @@ public:
 	void SetMaterial(std::shared_ptr<Material> material);
 
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, 
-		Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
 		std::shared_ptr<Camera> camera);
 
 private:
+	std::shared_ptr<Material> material;
 	Transform transform;
 	std::shared_ptr<Mesh> mesh;
-	std::shared_ptr<Material> material;
 };
 
