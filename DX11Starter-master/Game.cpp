@@ -154,12 +154,12 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device));
 
 	objects.push_back(std::make_shared<Entity>(meshes[0], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[1], materials[1]));
-	objects.push_back(std::make_shared<Entity>(meshes[2], materials[1]));
-	objects.push_back(std::make_shared<Entity>(meshes[3], materials[2]));
-	objects.push_back(std::make_shared<Entity>(meshes[4], materials[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[1], materials[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[2], materials[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[3], materials[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[4], materials[0]));
 	objects.push_back(std::make_shared<Entity>(meshes[5], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[6], materials[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[6], materials[0]));
 
 	// Adjust transforms
 	objects[0]->GetTransform()->MoveAbsolute(-9, 0, 0);
@@ -170,6 +170,14 @@ void Game::CreateGeometry()
 	objects[5]->GetTransform()->MoveAbsolute(6, 0, 0);
 	objects[6]->GetTransform()->MoveAbsolute(9, 0, 0);
 
+	Light directionalLight1;
+	directionalLight1 = {};
+	directionalLight1.Color = XMFLOAT3(1, 0, 0);
+	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight1.Intensity = 1.0f;
+	directionalLight1.Direction = XMFLOAT3(1, 0, 0);
+
+	lights.push_back(directionalLight1);
 }
 
 // --------------------------------------------------------
@@ -274,6 +282,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		//mesh->Draw(context);
 		object->GetMaterial()->GetPixelShader()->SetFloat("time", totalTime);
 		object->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
+		pixelShader->SetData(
+			"directionalLight1", // The name of the (eventual) variable in the shader
+			&lights[0], // The address of the data to set
+			sizeof(Light)); // The size of the data (the whole struct!) to set
 		object->Draw(context, activedCamera);
 	}
 

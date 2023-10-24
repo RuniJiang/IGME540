@@ -36,6 +36,7 @@ void Entity::Draw(
 		ps->SetFloat4("colorTint", material->GetColorTint()); 
 		ps->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 		ps->SetFloat("roughness", material->GetRoughness());
+
 		ps->CopyAllBufferData();
 
 		mesh->Draw(context);

@@ -6,6 +6,7 @@ cbuffer ExternalData : register(b0)
 	float3 cameraPosition;
 	float roughness;
 	float3 ambient;
+	Light directionalLight1;
 }
 
 
@@ -21,8 +22,11 @@ cbuffer ExternalData : register(b0)
 float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
-	return float4(input.normal, 1);
-	//return colorTint * float4(ambient ,1);
-	//return float4(roughness.rrr, 1); // Replicates value x3 (this is temporary)
-	//return float4(input.uv, 0, 1); // Adjust for your variable name
+	float3 toLight = normalize(-directionalLight1.Direction);
+	float3 diffuseAmount = saturate(Diffuse(input.normal, toLight));
+	float3 resultColor = (diffuseAmount * directionalLight1.Color * colorTint) +
+		(ambient * colorTint);
+
+
+	return float4(resultColor, 1);
 }

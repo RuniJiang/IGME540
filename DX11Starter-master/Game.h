@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "Material.h"
 #include "SimpleShader.h"
+#include "Light.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -70,5 +71,7 @@ private:
 
 	std::vector<std::shared_ptr<Camera>> cameras;
 	std::shared_ptr<Camera> activedCamera;
+
+	std::vector<Light> lights;
 };
 
