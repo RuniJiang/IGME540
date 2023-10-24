@@ -59,4 +59,33 @@ float Diffuse(float3 normal, float3 dirToLight)
     return saturate(dot(normal, dirToLight));
 }
 
+float Specular(float3 normal, float3 dirToLight, float roughness, float3 cameraPosition, float3 worldPosition)
+{
+	// Specular
+	float specExponent;
+	if (roughness > 0.05)
+	{
+		specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+		
+	}
+	else
+	{
+		specExponent = 0;
+	}
+
+	float3 V = normalize(cameraPosition - worldPosition);
+	float3 R = reflect(-dirToLight, normal);
+	float spec = pow(saturate(dot(R, V)), specExponent);
+	return spec;
+}
+
+float Attenuate(Light light, float3 worldPos)
+{
+	float dist = distance(light.Position, worldPos);
+	float att = saturate(1.0f - (dist * dist / (light.Range * light.Range)));
+	return att * att;
+}
+
+
+
 #endif

@@ -176,8 +176,39 @@ void Game::CreateGeometry()
 	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight1.Intensity = 1.0f;
 	directionalLight1.Direction = XMFLOAT3(1, 0, 0);
-
 	lights.push_back(directionalLight1);
+	
+	Light directionalLight2;
+	directionalLight2 = {};
+	directionalLight2.Color = XMFLOAT3(0, 1, 0);
+	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight2.Intensity = 1.0f;
+	directionalLight2.Direction = XMFLOAT3(0, -1, 0);
+	lights.push_back(directionalLight2);
+
+	Light directionalLight3;
+	directionalLight3 = {};
+	directionalLight3.Color = XMFLOAT3(0, 0, 1);
+	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight3.Intensity = 1.0f;
+	directionalLight3.Direction = XMFLOAT3(-1, 1, -0.5f);
+	lights.push_back(directionalLight3);
+
+	Light pointLight1 = {};
+	pointLight1.Color = XMFLOAT3(1, 1, 1);
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Intensity = 1.0f;
+	pointLight1.Position = XMFLOAT3(-1.5f, 0, 0);
+	pointLight1.Range = 10.0f;
+	lights.push_back(pointLight1);
+
+	Light pointLight2 = {};
+	pointLight2.Color = XMFLOAT3(1, 1, 1);
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Intensity = 0.5f;
+	pointLight2.Position = XMFLOAT3(1.5f, 0, 0);
+	pointLight2.Range = 10.0f;
+	lights.push_back(pointLight2);
 }
 
 // --------------------------------------------------------
@@ -282,10 +313,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		//mesh->Draw(context);
 		object->GetMaterial()->GetPixelShader()->SetFloat("time", totalTime);
 		object->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
-		pixelShader->SetData(
-			"directionalLight1", // The name of the (eventual) variable in the shader
-			&lights[0], // The address of the data to set
-			sizeof(Light)); // The size of the data (the whole struct!) to set
+		pixelShader->SetData("lights", &lights[0], sizeof(Light) * (int)lights.size());
+
 		object->Draw(context, activedCamera);
 	}
 
@@ -409,7 +438,42 @@ void Game::UIUpdate(float deltaTime)
 		// Finalize the tree node
 		ImGui::TreePop();
 	}
+	// === Lights ===
+	if (ImGui::TreeNode("Lights"))
+	{
+		// Light details
+		ImGui::Spacing();
+		ImGui::ColorEdit3("Ambient Color", &ambientColor.x);
 
+		// Loop and show the details for each entity
+		for (int i = 0; i < lights.size(); i++)
+		{
+			// Name of this light based on type
+			std::string lightName = "Light %d";
+			switch (lights[i].Type)
+			{
+			case LIGHT_TYPE_DIRECTIONAL: lightName += " (Directional)"; break;
+			case LIGHT_TYPE_POINT: lightName += " (Point)"; break;
+			case LIGHT_TYPE_SPOT: lightName += " (Spot)"; break;
+			}
+
+			// New node for each light
+			// Note the use of PushID(), so that each tree node and its widgets
+			// have unique internal IDs in the ImGui system
+			ImGui::PushID(i);
+			if (ImGui::TreeNode("Light Node", lightName.c_str(), i))
+			{
+				// Build UI for one entity at a time
+				LightUI(lights[i]);
+
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+
+		// Finalize the tree node
+		ImGui::TreePop();
+	}
 
 
 	ImGui::End(); // Ends the current window
@@ -468,4 +532,55 @@ void Game::CameraUI(std::shared_ptr<Camera> cam)
 	}
 
 	ImGui::Spacing();
+}
+
+// --------------------------------------------------------
+// Builds the UI for a single light
+// --------------------------------------------------------
+void Game::LightUI(Light& light)
+{
+	// Light type
+	if (ImGui::RadioButton("Directional", light.Type == LIGHT_TYPE_DIRECTIONAL))
+	{
+		light.Type = LIGHT_TYPE_DIRECTIONAL;
+	}
+	ImGui::SameLine();
+
+	if (ImGui::RadioButton("Point", light.Type == LIGHT_TYPE_POINT))
+	{
+		light.Type = LIGHT_TYPE_POINT;
+	}
+	ImGui::SameLine();
+
+	if (ImGui::RadioButton("Spot", light.Type == LIGHT_TYPE_SPOT))
+	{
+		light.Type = LIGHT_TYPE_SPOT;
+	}
+
+	// Direction
+	if (light.Type == LIGHT_TYPE_DIRECTIONAL || light.Type == LIGHT_TYPE_SPOT)
+	{
+		ImGui::DragFloat3("Direction", &light.Direction.x, 0.1f);
+
+		// Normalize the direction
+		XMVECTOR dirNorm = XMVector3Normalize(XMLoadFloat3(&light.Direction));
+		XMStoreFloat3(&light.Direction, dirNorm);
+	}
+
+	// Position & Range
+	if (light.Type == LIGHT_TYPE_POINT || light.Type == LIGHT_TYPE_SPOT)
+	{
+		ImGui::DragFloat3("Position", &light.Position.x, 0.1f);
+		ImGui::SliderFloat("Range", &light.Range, 0.1f, 100.0f);
+	}
+
+	// Spot falloff
+	if (light.Type == LIGHT_TYPE_SPOT)
+	{
+		ImGui::SliderFloat("Spot Falloff", &light.SpotFalloff, 0.1f, 128.0f);
+	}
+
+	// Color details
+	ImGui::ColorEdit3("Color", &light.Color.x);
+	ImGui::SliderFloat("Intensity", &light.Intensity, 0.0f, 10.0f);
 }
