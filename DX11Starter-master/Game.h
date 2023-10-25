@@ -40,6 +40,7 @@ private:
 	void CreateCameras();
 
 	void CameraUI(std::shared_ptr<Camera> cam);
+	void LightUI(Light& light);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

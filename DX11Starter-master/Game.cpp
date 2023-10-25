@@ -73,9 +73,7 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	// Helper methods for loading shaders, creating some basic
-	// geometry to draw and some simple camera matrices.
-	//  - You'll be expanding and/or replacing these later
+
 	LoadShaders();
 	CreateGeometry();
 	CreateCameras();
@@ -170,6 +168,7 @@ void Game::CreateGeometry()
 	objects[5]->GetTransform()->MoveAbsolute(6, 0, 0);
 	objects[6]->GetTransform()->MoveAbsolute(9, 0, 0);
 
+	// Create all the lights in the scene
 	Light directionalLight1;
 	directionalLight1 = {};
 	directionalLight1.Color = XMFLOAT3(1, 0, 0);
@@ -302,12 +301,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 	
-
-	// FOR(auto& m : meshes)
-	// {
-	// m->SetBuffersAndDraw(context)
-	// }
-	//
 	for (std::shared_ptr<Entity>& object : objects)
 	{
 		//mesh->Draw(context);
@@ -438,7 +431,6 @@ void Game::UIUpdate(float deltaTime)
 		// Finalize the tree node
 		ImGui::TreePop();
 	}
-	// === Lights ===
 	if (ImGui::TreeNode("Lights"))
 	{
 		// Light details
@@ -448,22 +440,11 @@ void Game::UIUpdate(float deltaTime)
 		// Loop and show the details for each entity
 		for (int i = 0; i < lights.size(); i++)
 		{
-			// Name of this light based on type
-			std::string lightName = "Light %d";
-			switch (lights[i].Type)
-			{
-			case LIGHT_TYPE_DIRECTIONAL: lightName += " (Directional)"; break;
-			case LIGHT_TYPE_POINT: lightName += " (Point)"; break;
-			case LIGHT_TYPE_SPOT: lightName += " (Spot)"; break;
-			}
-
-			// New node for each light
-			// Note the use of PushID(), so that each tree node and its widgets
-			// have unique internal IDs in the ImGui system
 			ImGui::PushID(i);
-			if (ImGui::TreeNode("Light Node", lightName.c_str(), i))
+			if (ImGui::TreeNode("Light Node", "Light %d", i))
 			{
-				// Build UI for one entity at a time
+				ImGui::Spacing();
+
 				LightUI(lights[i]);
 
 				ImGui::TreePop();

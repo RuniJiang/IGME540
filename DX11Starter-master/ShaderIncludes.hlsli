@@ -6,11 +6,7 @@
 #define LIGHT_TYPE_POINT 1
 #define LIGHT_TYPE_SPOT 2
 
-// Struct representing a single vertex worth of data
-// - This should match the vertex definition in our C++ code
-// - By "match", I mean the size, order and number of members
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
+
 struct VertexShaderInput
 {
 	// Data type
@@ -23,11 +19,6 @@ struct VertexShaderInput
 	float2 uv               : TEXCOORD;
 };
 
-// Struct representing the data we're sending down the pipeline
-// - Should match our pixel shader's input (hence the name: Vertex to Pixel)
-// - At a minimum, we need a piece of data defined tagged as SV_POSITION
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
 struct VertexToPixel
 {
 	// Data type
@@ -41,6 +32,8 @@ struct VertexToPixel
     float3 worldPosition : POSITIONT;
 };
 
+// ---------------------------------------------------------------------------------- //
+// ---------------------------------- LIGHTS ---------------------------------------- //
 struct Light
 {
     int Type; // Which kind of light? 0, 1 or 2 (see above)
@@ -53,6 +46,7 @@ struct Light
     float3 Padding; // Purposefully padding to hit the 16-byte boundary
 
 };
+
 
 float Diffuse(float3 normal, float3 dirToLight)
 {
@@ -86,6 +80,28 @@ float Attenuate(Light light, float3 worldPos)
 	return att * att;
 }
 
+// LIGHT HELPER FUNCTIONS
 
+// DIRECTIONAL LIGHTS
+float3 DirectionalLight(Light light, float3 normal, float3 cameraPosition, float3 worldPosition, float roughness, float3 colorTint)
+{
+    float3 toLight = normalize(-light.Direction);
+	
+    float diffuse = Diffuse(normal, toLight);
+    float specular = Specular(normal, toLight, roughness, cameraPosition, worldPosition);
+	
+    return (diffuse * colorTint + specular) * light.Intensity * light.Color;
+}
+
+float3 PointLight(Light light, float3 normal, float3 cameraPosition, float3 worldPosition, float roughness, float3 colorTint)
+{
+    float3 toLight = normalize(light.Position - worldPosition);
+	
+    float attenuate = Attenuate(light, worldPosition);
+    float diffuse = Diffuse(normal, toLight);
+    float specular = Specular(normal, toLight, roughness, cameraPosition, worldPosition);
+	
+    return (diffuse * colorTint + specular) * attenuate * light.Intensity * light.Color;
+}
 
 #endif

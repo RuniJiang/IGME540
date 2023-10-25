@@ -3,8 +3,8 @@
 
 cbuffer ExternalData : register(b0)
 {
-	float4 colorTint; // 4-component float vector
-	float3 cameraPosition;
+	float4 colorTint;       // 4-component float vector
+	float3 cameraPosition;  
 	float roughness;
 	float3 ambient;
 
@@ -24,40 +24,22 @@ cbuffer ExternalData : register(b0)
 float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
-	float3 finalResult = ambient * colorTint;
+	float3 finalResult = ambient * (float3)colorTint;
 
 	for (int i = 0; i < 5; i++)
 	{
-		// Grab this light and normalize the direction (just in case)
 		Light light = lights[i];
-		float3 toLight;
-		float3 diffuseAmount;
+		light.Direction = normalize(light.Direction);
 		float spec;
-		// Run the correct lighting calculation based on the light's type
+
 		switch (lights[i].Type)
 		{
 		case LIGHT_TYPE_DIRECTIONAL:
-			toLight = normalize(-light.Direction);
-
-			// Diffuse
-			diffuseAmount = saturate(Diffuse(input.normal, toLight));
-
-			// Specular
-			spec = Specular(input.normal, toLight, roughness, cameraPosition, input.worldPosition);
-			finalResult += (diffuseAmount * colorTint + spec) * lights[i].Intensity * lights[i].Color;
+			finalResult += DirectionalLight(light, input.normal, cameraPosition, input.worldPosition, roughness, (float3)colorTint);
 			break;
 
 		case LIGHT_TYPE_POINT:
-			toLight = normalize(light.Position - input.worldPosition);
-
-			// Calculate the light amounts
-			float atten = Attenuate(light, input.worldPosition);
-			// Diffuse
-			diffuseAmount = Diffuse(input.normal, toLight);
-			// Specular
-			spec = Specular(input.normal, toLight, roughness, cameraPosition, input.worldPosition);
-
-			finalResult += (diffuseAmount * colorTint + spec) * atten * lights[i].Intensity * lights[i].Color;
+			finalResult += PointLight(light, input.normal, cameraPosition, input.worldPosition, roughness, (float3)colorTint);
 			break;
 
 		case LIGHT_TYPE_SPOT:
