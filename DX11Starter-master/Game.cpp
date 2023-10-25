@@ -521,21 +521,13 @@ void Game::CameraUI(std::shared_ptr<Camera> cam)
 void Game::LightUI(Light& light)
 {
 	// Light type
-	if (ImGui::RadioButton("Directional", light.Type == LIGHT_TYPE_DIRECTIONAL))
+	if (light.Type == LIGHT_TYPE_DIRECTIONAL)
 	{
-		light.Type = LIGHT_TYPE_DIRECTIONAL;
+		ImGui::BulletText("Directional Light");
 	}
-	ImGui::SameLine();
-
-	if (ImGui::RadioButton("Point", light.Type == LIGHT_TYPE_POINT))
+	else if (light.Type == LIGHT_TYPE_POINT)
 	{
-		light.Type = LIGHT_TYPE_POINT;
-	}
-	ImGui::SameLine();
-
-	if (ImGui::RadioButton("Spot", light.Type == LIGHT_TYPE_SPOT))
-	{
-		light.Type = LIGHT_TYPE_SPOT;
+		ImGui::BulletText("Point Light");
 	}
 
 	// Direction
@@ -553,12 +545,6 @@ void Game::LightUI(Light& light)
 	{
 		ImGui::DragFloat3("Position", &light.Position.x, 0.1f);
 		ImGui::SliderFloat("Range", &light.Range, 0.1f, 100.0f);
-	}
-
-	// Spot falloff
-	if (light.Type == LIGHT_TYPE_SPOT)
-	{
-		ImGui::SliderFloat("Spot Falloff", &light.SpotFalloff, 0.1f, 128.0f);
 	}
 
 	// Color details
