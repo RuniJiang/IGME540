@@ -7,6 +7,7 @@
 #include "Material.h"
 #include "SimpleShader.h"
 #include "Light.h"
+#include "Sky.h"
 
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -57,6 +58,9 @@ private:
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimplePixelShader> customPS;
 	std::shared_ptr<SimplePixelShader> customPS2;
+	std::shared_ptr<SimpleVertexShader> skyVS;
+	std::shared_ptr<SimplePixelShader> skyPS;
+
 
 	//Meshes
 	std::vector < std::shared_ptr<Mesh>> meshes;
@@ -72,6 +76,8 @@ private:
 
 	std::vector<std::shared_ptr<Camera>> cameras;
 	std::shared_ptr<Camera> activedCamera;
+
+	std::shared_ptr<Sky> sky;
 
 	std::vector<Light> lights;
 };

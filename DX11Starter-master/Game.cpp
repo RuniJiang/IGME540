@@ -3,6 +3,7 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "Mesh.h"
+#include "WICTextureLoader.h"
 
 // This code assumes files are in "ImGui" subfolder!
 // Adjust as necessary for your own folder structure
@@ -122,6 +123,10 @@ void Game::LoadShaders()
 		FixPath(L"CustomPS.cso").c_str());
 	customPS2 = std::make_shared<SimplePixelShader>(device, context,
 		FixPath(L"CustomPS2.cso").c_str());
+	skyVS = std::make_shared<SimpleVertexShader>(device, context, 
+		FixPath(L"SkyVertexShader.cso").c_str());
+	skyPS = std::make_shared<SimplePixelShader>(device, context,
+		FixPath(L"SkyPixelShader.cso").c_str());
 }
 
 // --------------------------------------------------------
@@ -138,10 +143,175 @@ void Game::CreateGeometry()
 	XMFLOAT4 brown  = XMFLOAT4(0.7f, 0.5f, 0.5f, 1.0f);
 	XMFLOAT4 white  = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
-	materials.push_back(std::make_shared<Material>(green, 0.5, vertexShader, customPS));
-	materials.push_back(std::make_shared<Material>(blue, 0.5, vertexShader, customPS2));
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rustymetal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rustymetalSpecularSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rustymetalNormalMap;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokentiles;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokentilesSpecularSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokentilesNormalMap;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> checkTiles;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> checkTilesSpecularSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> checkTilesNormalMap;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushion;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalMap;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestone;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobbleNormalMap;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rock;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalMap;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> flatNormalMap;
+
+	// Load textures
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/rustymetal.png").c_str(),
+		0,
+		rustymetal.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/rustymetal_specular.png").c_str(),
+		0,
+		rustymetalSpecularSRV.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/brokentiles.png").c_str(),
+		0,
+		brokentiles.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/brokentiles_specular.png").c_str(),
+		0,
+		brokentilesSpecularSRV.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/tiles.png").c_str(),
+		0,
+		checkTiles.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/tiles_specular.png").c_str(),
+		0,
+		checkTilesSpecularSRV.GetAddressOf());
+
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/cushion.png").c_str(),
+		0,
+		cushion.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/cushion_normals.png").c_str(),
+		0,
+		cushionNormalMap.GetAddressOf());
+
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/cobblestone.png").c_str(),
+		0,
+		cobblestone.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/cobblestone_normals.png").c_str(),
+		0,
+		cobbleNormalMap.GetAddressOf());
+
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/rock.png").c_str(),
+		0,
+		rock.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/rock_normals.png").c_str(),
+		0,
+		rockNormalMap.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/Textures/flat_normals.png").c_str(),
+		0,
+		flatNormalMap.GetAddressOf());
+
+	// Sampler
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
+
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	//materials.push_back(std::make_shared<Material>(green, 0.5, vertexShader, customPS));
+	//materials.push_back(std::make_shared<Material>(blue, 0.5, vertexShader, customPS2));
+
+	materials[0]->AddSampler("BasicSampler", sampler);
+	materials[0]->AddTextureSRV("SurfaceTexture", rustymetal);
+	materials[0]->AddTextureSRV("SpecularMap", rustymetalSpecularSRV);
+	materials[0]->AddTextureSRV("NormalMap", flatNormalMap);
+
+
+	materials[1]->AddSampler("BasicSampler", sampler);
+	materials[1]->AddTextureSRV("SurfaceTexture", brokentiles);
+	materials[1]->AddTextureSRV("SpecularMap", brokentilesSpecularSRV);
+	materials[1]->AddTextureSRV("NormalMap", flatNormalMap);
+
+
+	materials[2]->AddSampler("BasicSampler", sampler);
+	materials[2]->AddTextureSRV("SurfaceTexture", checkTiles);
+	materials[2]->AddTextureSRV("SpecularMap", checkTilesSpecularSRV);
+	materials[2]->AddTextureSRV("NormalMap", flatNormalMap);
+
+	materials[3]->AddSampler("BasicSampler", sampler);
+	materials[3]->AddTextureSRV("SurfaceTexture", cushion);
+	materials[3]->AddTextureSRV("NormalMap", cushionNormalMap);
+
+	materials[4]->AddSampler("BasicSampler", sampler);
+	materials[4]->AddTextureSRV("SurfaceTexture", cobblestone);
+	materials[4]->AddTextureSRV("NormalMap", cobbleNormalMap);
+
+	materials[5]->AddSampler("BasicSampler", sampler);
+	materials[5]->AddTextureSRV("SurfaceTexture", rock);
+	materials[5]->AddTextureSRV("NormalMap", rockNormalMap);
 
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device));
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device));
@@ -151,13 +321,20 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device));
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device));
 
+	objects.push_back(std::make_shared<Entity>(meshes[0], materials[3]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[3]));
+	objects.push_back(std::make_shared<Entity>(meshes[0], materials[4]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[4]));
+	objects.push_back(std::make_shared<Entity>(meshes[0], materials[5]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[5]));
+
 	objects.push_back(std::make_shared<Entity>(meshes[0], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[1], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[2], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[3], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[4], materials[0]));
 	objects.push_back(std::make_shared<Entity>(meshes[5], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[6], materials[0]));
+	objects.push_back(std::make_shared<Entity>(meshes[0], materials[1]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[1]));
+	objects.push_back(std::make_shared<Entity>(meshes[0], materials[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[2]));
+
 
 	// Adjust transforms
 	objects[0]->GetTransform()->MoveAbsolute(-9, 0, 0);
@@ -166,12 +343,46 @@ void Game::CreateGeometry()
 	objects[3]->GetTransform()->MoveAbsolute(0, 0, 0);
 	objects[4]->GetTransform()->MoveAbsolute(3, 0, 0);
 	objects[5]->GetTransform()->MoveAbsolute(6, 0, 0);
-	objects[6]->GetTransform()->MoveAbsolute(9, 0, 0);
+
+	objects[6]->GetTransform()->MoveAbsolute(-9, 3, 0);
+	objects[7]->GetTransform()->MoveAbsolute(-6, 3, 0);
+	objects[8]->GetTransform()->MoveAbsolute(-3, 3, 0);
+	objects[9]->GetTransform()->MoveAbsolute(0, 3, 0);
+	objects[10]->GetTransform()->MoveAbsolute(3, 3, 0);
+	objects[11]->GetTransform()->MoveAbsolute(6, 3, 0);
+
+	objects[0]->GetTransform()->Rotate(5, 45, 0);
+	objects[1]->GetTransform()->Rotate(5, 45, 0);
+	objects[2]->GetTransform()->Rotate(5, 45, 0);
+	objects[3]->GetTransform()->Rotate(5, 45, 0);
+	objects[4]->GetTransform()->Rotate(5, 45, 0);
+	objects[5]->GetTransform()->Rotate(5, 45, 0);
+
+	objects[6]->GetTransform()->Rotate(5, 45, 0);
+	objects[7]->GetTransform()->Rotate(5, 45, 0);
+	objects[8]->GetTransform()->Rotate(5, 45, 0);
+	objects[9]->GetTransform()->Rotate(5, 45, 0);
+	objects[10]->GetTransform()->Rotate(5, 45, 0);
+	objects[11]->GetTransform()->Rotate(5, 45, 0);
+
+	sky = std::make_shared<Sky>(
+		FixPath(L"../../Assets/Textures/Skies/Clouds Pink/right.png").c_str(),
+		FixPath(L"../../Assets/Textures/Skies/Clouds Pink/left.png").c_str(),
+		FixPath(L"../../Assets/Textures/Skies/Clouds Pink/up.png").c_str(),
+		FixPath(L"../../Assets/Textures/Skies/Clouds Pink/down.png").c_str(),
+		FixPath(L"../../Assets/Textures/Skies/Clouds Pink/front.png").c_str(),
+		FixPath(L"../../Assets/Textures/Skies/Clouds Pink/back.png").c_str(),
+		meshes[0],
+		skyVS, 
+		skyPS,
+		sampler,
+		device,
+		context);
 
 	// Create all the lights in the scene
 	Light directionalLight1;
 	directionalLight1 = {};
-	directionalLight1.Color = XMFLOAT3(1, 0, 0);
+	directionalLight1.Color = XMFLOAT3(1, 1, 1);
 	directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight1.Intensity = 1.0f;
 	directionalLight1.Direction = XMFLOAT3(1, 0, 0);
@@ -179,15 +390,15 @@ void Game::CreateGeometry()
 	
 	Light directionalLight2;
 	directionalLight2 = {};
-	directionalLight2.Color = XMFLOAT3(0, 1, 0);
+	directionalLight2.Color = XMFLOAT3(1, 1, 1);
 	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight2.Intensity = 1.0f;
-	directionalLight2.Direction = XMFLOAT3(0, -1, 0);
+	directionalLight2.Direction = XMFLOAT3(0, 0, 1);
 	lights.push_back(directionalLight2);
 
 	Light directionalLight3;
 	directionalLight3 = {};
-	directionalLight3.Color = XMFLOAT3(0, 0, 1);
+	directionalLight3.Color = XMFLOAT3(1, 1, 1);
 	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight3.Intensity = 1.0f;
 	directionalLight3.Direction = XMFLOAT3(-1, 1, -0.5f);
@@ -263,17 +474,17 @@ void Game::Update(float deltaTime, float totalTime)
 {
 	activedCamera->Update(deltaTime);
 
-	// Move one entity from -0.7 to 0.7 along x-axis
-	if (objects[1]->GetTransform()->GetPosition().x >= 0.7 ||
-		objects[1]->GetTransform()->GetPosition().x <= -0.7)
-	{
-		speed = -speed;
-	}
-	objects[1]->GetTransform()->MoveAbsolute(speed * deltaTime, 0, 0);
+	//// Move one entity from -0.7 to 0.7 along x-axis
+	//if (objects[1]->GetTransform()->GetPosition().x >= 0.7 ||
+	//	objects[1]->GetTransform()->GetPosition().x <= -0.7)
+	//{
+	//	speed = -speed;
+	//}
+	//objects[1]->GetTransform()->MoveAbsolute(speed * deltaTime, 0, 0);
 
-	// Change the scale based on sin
-	float temp = abs(sin(totalTime));
-	objects[4]->GetTransform()->SetScale(temp, temp,temp);
+	//// Change the scale based on sin
+	//float temp = abs(sin(totalTime));
+	//objects[4]->GetTransform()->SetScale(temp, temp,temp);
 
 
 	UIUpdate(deltaTime);
@@ -310,7 +521,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		object->Draw(context, activedCamera);
 	}
-
+	sky->Draw(activedCamera);
 	{
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); 

@@ -16,6 +16,7 @@ struct VertexShaderInput
 	//  v    v                v
 	float3 localPosition	: POSITION;     // XYZ position
 	float3 normal           : NORMAL;
+	float3 tangent          : TANGENT;
 	float2 uv               : TEXCOORD;
 };
 
@@ -29,7 +30,14 @@ struct VertexToPixel
 	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
 	float2 uv : TEXCOORD;
     float3 normal : NORMARL;
+	float tangent : TANGENT;
     float3 worldPosition : POSITIONT;
+};
+
+struct VertexToPixel_Sky
+{
+	float4 screenPosition	: SV_POSITION;
+	float3 sampleDir        : DIRECTION;
 };
 
 // ---------------------------------------------------------------------------------- //
@@ -70,6 +78,7 @@ float Specular(float3 normal, float3 dirToLight, float roughness, float3 cameraP
 	float3 V = normalize(cameraPosition - worldPosition);
 	float3 R = reflect(-dirToLight, normal);
 	float spec = pow(saturate(dot(R, V)), specExponent);
+
 	return spec;
 }
 
@@ -83,25 +92,25 @@ float Attenuate(Light light, float3 worldPos)
 // LIGHT HELPER FUNCTIONS
 
 // DIRECTIONAL LIGHTS
-float3 DirectionalLight(Light light, float3 normal, float3 cameraPosition, float3 worldPosition, float roughness, float3 colorTint)
+float3 DirectionalLight(Light light, float3 normal, float3 cameraPosition, float3 worldPosition, float roughness, float3 surfaceColor, float specularValue)
 {
     float3 toLight = normalize(-light.Direction);
 	
     float diffuse = Diffuse(normal, toLight);
-    float specular = Specular(normal, toLight, roughness, cameraPosition, worldPosition);
+    float specular = Specular(normal, toLight, roughness, cameraPosition, worldPosition) * specularValue;
 	
-    return (diffuse * colorTint + specular) * light.Intensity * light.Color;
+    return (diffuse * surfaceColor + specular) * light.Intensity * light.Color;
 }
 
-float3 PointLight(Light light, float3 normal, float3 cameraPosition, float3 worldPosition, float roughness, float3 colorTint)
+float3 PointLight(Light light, float3 normal, float3 cameraPosition, float3 worldPosition, float roughness, float3 surfaceColor, float specularValue)
 {
     float3 toLight = normalize(light.Position - worldPosition);
 	
     float attenuate = Attenuate(light, worldPosition);
     float diffuse = Diffuse(normal, toLight);
-    float specular = Specular(normal, toLight, roughness, cameraPosition, worldPosition);
+    float specular = Specular(normal, toLight, roughness, cameraPosition, worldPosition) * specularValue;
 	
-    return (diffuse * colorTint + specular) * attenuate * light.Intensity * light.Color;
+    return (diffuse * surfaceColor + specular) * attenuate * light.Intensity * light.Color;
 }
 
 #endif
