@@ -39,6 +39,8 @@ private:
 	void LoadShaders(); 
 	void CreateGeometry();
 	void CreateCameras();
+	void CreateShadowMap();
+	void RenderShadowMap();
 
 	void CameraUI(std::shared_ptr<Camera> cam);
 	void LightUI(Light& light);
@@ -60,6 +62,16 @@ private:
 	std::shared_ptr<SimplePixelShader> customPS2;
 	std::shared_ptr<SimpleVertexShader> skyVS;
 	std::shared_ptr<SimplePixelShader> skyPS;
+
+	// Shadow map
+	int shadowMapResolution;
+	float shadowProjectionSize;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	DirectX::XMFLOAT4X4 shadowViewMatrix;
+	DirectX::XMFLOAT4X4 shadowProjectionMatrix;
+	std::shared_ptr<SimpleVertexShader> shadowVS;
+	//std::shared_ptr<SimplePixelShader> skyPS;
 
 
 	//Meshes

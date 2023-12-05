@@ -45,6 +45,8 @@ Game::Game(HINSTANCE hInstance)
 	colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	ambientColor = XMFLOAT3(0.1f, 0.1f, 0.25f);
 	showImGuiDemo = false;
+	shadowMapResolution = 1024;
+	shadowProjectionSize = 15.0f;
 
 }
 
@@ -91,6 +93,8 @@ void Game::Init()
 
 	}
 
+	CreateShadowMap();
+
 	// Initial the UI
 	{
 		// Initialize ImGui itself & platform/renderer backends
@@ -127,6 +131,8 @@ void Game::LoadShaders()
 		FixPath(L"SkyVertexShader.cso").c_str());
 	skyPS = std::make_shared<SimplePixelShader>(device, context,
 		FixPath(L"SkyPixelShader.cso").c_str());
+	shadowVS = std::make_shared<SimpleVertexShader>(device, context,
+		FixPath(L"ShadowVertexShader.cso").c_str());
 }
 
 // --------------------------------------------------------
@@ -145,26 +151,41 @@ void Game::CreateGeometry()
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rustymetal;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rustymetalSpecularSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rustymetalNormalMap;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratched_albedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratched_metal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratched_normals;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratched_roughness;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokentiles;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokentilesSpecularSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokentilesNormalMap;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> wood_albedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> wood_metal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> wood_normals;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> wood_roughness;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> checkTiles;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> checkTilesSpecularSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> checkTilesNormalMap;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestone_albedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestone_metal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestone_normals;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestone_roughness;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushion;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalMap;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floor_albedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floor_metal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floor_normals;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floor_roughness;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestone;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobbleNormalMap;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronze_albedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronze_metal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronze_normals;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronze_roughness;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rock;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalMap;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rough_albedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rough_metal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rough_normals;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rough_roughness;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paint_albedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paint_metal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paint_normals;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paint_roughness;
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> flatNormalMap;
 
@@ -172,89 +193,206 @@ void Game::CreateGeometry()
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/rustymetal.png").c_str(),
+		FixPath(L"../../Assets/PBR/scratched_albedo.png").c_str(),
 		0,
-		rustymetal.GetAddressOf());
+		scratched_albedo.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/rustymetal_specular.png").c_str(),
+		FixPath(L"../../Assets/PBR/scratched_metal.png").c_str(),
 		0,
-		rustymetalSpecularSRV.GetAddressOf());
+		scratched_metal.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/brokentiles.png").c_str(),
+		FixPath(L"../../Assets/PBR/scractched_normals.png").c_str(),
 		0,
-		brokentiles.GetAddressOf());
+		scratched_normals.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/brokentiles_specular.png").c_str(),
+		FixPath(L"../../Assets/PBR/scratched_roughness.png").c_str(),
 		0,
-		brokentilesSpecularSRV.GetAddressOf());
+		scratched_roughness.GetAddressOf());
+
+	// Wood
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/wood_albedo.png").c_str(),
+		0,
+		wood_albedo.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/tiles.png").c_str(),
+		FixPath(L"../../Assets/PBR/wood_metal.png").c_str(),
 		0,
-		checkTiles.GetAddressOf());
+		wood_metal.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/tiles_specular.png").c_str(),
+		FixPath(L"../../Assets/PBR/wood_normals.png").c_str(),
 		0,
-		checkTilesSpecularSRV.GetAddressOf());
-
+		wood_normals.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/cushion.png").c_str(),
+		FixPath(L"../../Assets/PBR/wood_roughness.png").c_str(),
 		0,
-		cushion.GetAddressOf());
+		wood_roughness.GetAddressOf());
+
+	//cobblestone
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/cobblestone_albedo.png").c_str(),
+		0,
+		cobblestone_albedo.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/cushion_normals.png").c_str(),
+		FixPath(L"../../Assets/PBR/cobblestone_metal.png").c_str(),
 		0,
-		cushionNormalMap.GetAddressOf());
-
+		cobblestone_metal.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/cobblestone.png").c_str(),
+		FixPath(L"../../Assets/PBR/cobblestone_normals.png").c_str(),
 		0,
-		cobblestone.GetAddressOf());
+		cobblestone_normals.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/cobblestone_normals.png").c_str(),
+		FixPath(L"../../Assets/PBR/cobblestone_roughness.png").c_str(),
 		0,
-		cobbleNormalMap.GetAddressOf());
+		cobblestone_roughness.GetAddressOf());
 
+	// Floor
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/floor_albedo.png").c_str(),
+		0,
+		floor_albedo.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/rock.png").c_str(),
+		FixPath(L"../../Assets/PBR/floor_metal.png").c_str(),
 		0,
-		rock.GetAddressOf());
+		floor_metal.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Assets/Textures/rock_normals.png").c_str(),
+		FixPath(L"../../Assets/PBR/floor_normals.png").c_str(),
 		0,
-		rockNormalMap.GetAddressOf());
+		floor_normals.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/floor_roughness.png").c_str(),
+		0,
+		floor_roughness.GetAddressOf());
+
+	// Bronze
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/bronze_albedo.png").c_str(),
+		0,
+		bronze_albedo.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/bronze_metal.png").c_str(),
+		0,
+		bronze_metal.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/bronze_normals.png").c_str(),
+		0,
+		bronze_normals.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/bronze_roughness.png").c_str(),
+		0,
+		bronze_roughness.GetAddressOf());
+
+	// Rough
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/rough_albedo.png").c_str(),
+		0,
+		rough_albedo.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/rough_metal.png").c_str(),
+		0,
+		rough_metal.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/rough_normals.png").c_str(),
+		0,
+		rough_normals.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/rough_roughness.png").c_str(),
+		0,
+		rough_roughness.GetAddressOf());
+
+	// Rough
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/paint_albedo.png").c_str(),
+		0,
+		paint_albedo.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/paint_metal.png").c_str(),
+		0,
+		paint_metal.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/paint_normals.png").c_str(),
+		0,
+		paint_normals.GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Assets/PBR/paint_roughness.png").c_str(),
+		0,
+		paint_roughness.GetAddressOf());
+
+
 
 	DirectX::CreateWICTextureFromFile(
 		device.Get(),
@@ -277,41 +415,53 @@ void Game::CreateGeometry()
 	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
 	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
 	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
+	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
 
-	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
-	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
-	materials.push_back(std::make_shared<Material>(white, 0.5, vertexShader, pixelShader));
-	//materials.push_back(std::make_shared<Material>(green, 0.5, vertexShader, customPS));
-	//materials.push_back(std::make_shared<Material>(blue, 0.5, vertexShader, customPS2));
 
 	materials[0]->AddSampler("BasicSampler", sampler);
-	materials[0]->AddTextureSRV("SurfaceTexture", rustymetal);
-	materials[0]->AddTextureSRV("SpecularMap", rustymetalSpecularSRV);
-	materials[0]->AddTextureSRV("NormalMap", flatNormalMap);
-
+	materials[0]->AddTextureSRV("Albedo", scratched_albedo);
+	materials[0]->AddTextureSRV("NormalMap", scratched_normals);
+	materials[0]->AddTextureSRV("MetalnessMap", scratched_metal);
+	materials[0]->AddTextureSRV("RoughnessMap", scratched_roughness);
 
 	materials[1]->AddSampler("BasicSampler", sampler);
-	materials[1]->AddTextureSRV("SurfaceTexture", brokentiles);
-	materials[1]->AddTextureSRV("SpecularMap", brokentilesSpecularSRV);
-	materials[1]->AddTextureSRV("NormalMap", flatNormalMap);
-
+	materials[1]->AddTextureSRV("Albedo", wood_albedo);
+	materials[1]->AddTextureSRV("NormalMap", wood_normals);
+	materials[1]->AddTextureSRV("MetalnessMap", wood_metal);
+	materials[1]->AddTextureSRV("RoughnessMap", wood_roughness);
 
 	materials[2]->AddSampler("BasicSampler", sampler);
-	materials[2]->AddTextureSRV("SurfaceTexture", checkTiles);
-	materials[2]->AddTextureSRV("SpecularMap", checkTilesSpecularSRV);
-	materials[2]->AddTextureSRV("NormalMap", flatNormalMap);
+	materials[2]->AddTextureSRV("Albedo", cobblestone_albedo);
+	materials[2]->AddTextureSRV("NormalMap", cobblestone_normals);
+	materials[2]->AddTextureSRV("MetalnessMap", cobblestone_metal);
+	materials[2]->AddTextureSRV("RoughnessMap", cobblestone_roughness);
 
 	materials[3]->AddSampler("BasicSampler", sampler);
-	materials[3]->AddTextureSRV("SurfaceTexture", cushion);
-	materials[3]->AddTextureSRV("NormalMap", cushionNormalMap);
+	materials[3]->AddTextureSRV("Albedo", floor_albedo);
+	materials[3]->AddTextureSRV("NormalMap", floor_normals);
+	materials[3]->AddTextureSRV("MetalnessMap", floor_metal);
+	materials[3]->AddTextureSRV("RoughnessMap", floor_roughness);
 
 	materials[4]->AddSampler("BasicSampler", sampler);
-	materials[4]->AddTextureSRV("SurfaceTexture", cobblestone);
-	materials[4]->AddTextureSRV("NormalMap", cobbleNormalMap);
+	materials[4]->AddTextureSRV("Albedo", bronze_albedo);
+	materials[4]->AddTextureSRV("NormalMap", bronze_normals);
+	materials[4]->AddTextureSRV("MetalnessMap", bronze_metal);
+	materials[4]->AddTextureSRV("RoughnessMap", bronze_roughness);
 
 	materials[5]->AddSampler("BasicSampler", sampler);
-	materials[5]->AddTextureSRV("SurfaceTexture", rock);
-	materials[5]->AddTextureSRV("NormalMap", rockNormalMap);
+	materials[5]->AddTextureSRV("Albedo", rough_albedo);
+	materials[5]->AddTextureSRV("NormalMap", rough_normals);
+	materials[5]->AddTextureSRV("MetalnessMap", rough_metal);
+	materials[5]->AddTextureSRV("RoughnessMap", rough_roughness);
+
+	materials[6]->AddSampler("BasicSampler", sampler);
+	materials[6]->AddTextureSRV("Albedo", paint_albedo);
+	materials[6]->AddTextureSRV("NormalMap", paint_normals);
+	materials[6]->AddTextureSRV("MetalnessMap", paint_metal);
+	materials[6]->AddTextureSRV("RoughnessMap", paint_roughness);
 
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device));
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device));
@@ -321,49 +471,23 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device));
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device));
 
-	objects.push_back(std::make_shared<Entity>(meshes[0], materials[3]));
-	objects.push_back(std::make_shared<Entity>(meshes[5], materials[3]));
-	objects.push_back(std::make_shared<Entity>(meshes[0], materials[4]));
-	objects.push_back(std::make_shared<Entity>(meshes[5], materials[4]));
-	objects.push_back(std::make_shared<Entity>(meshes[0], materials[5]));
-	objects.push_back(std::make_shared<Entity>(meshes[5], materials[5]));
-
-	objects.push_back(std::make_shared<Entity>(meshes[0], materials[0]));
 	objects.push_back(std::make_shared<Entity>(meshes[5], materials[0]));
-	objects.push_back(std::make_shared<Entity>(meshes[0], materials[1]));
 	objects.push_back(std::make_shared<Entity>(meshes[5], materials[1]));
-	objects.push_back(std::make_shared<Entity>(meshes[0], materials[2]));
 	objects.push_back(std::make_shared<Entity>(meshes[5], materials[2]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[3]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[4]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[5]));
+	objects.push_back(std::make_shared<Entity>(meshes[5], materials[6]));
 
 
 	// Adjust transforms
-	objects[0]->GetTransform()->MoveAbsolute(-9, 0, 0);
-	objects[1]->GetTransform()->MoveAbsolute(-6, 0, 0);
-	objects[2]->GetTransform()->MoveAbsolute(-3, 0, 0);
-	objects[3]->GetTransform()->MoveAbsolute(0, 0, 0);
-	objects[4]->GetTransform()->MoveAbsolute(3, 0, 0);
-	objects[5]->GetTransform()->MoveAbsolute(6, 0, 0);
-
-	objects[6]->GetTransform()->MoveAbsolute(-9, 3, 0);
-	objects[7]->GetTransform()->MoveAbsolute(-6, 3, 0);
-	objects[8]->GetTransform()->MoveAbsolute(-3, 3, 0);
-	objects[9]->GetTransform()->MoveAbsolute(0, 3, 0);
-	objects[10]->GetTransform()->MoveAbsolute(3, 3, 0);
-	objects[11]->GetTransform()->MoveAbsolute(6, 3, 0);
-
-	objects[0]->GetTransform()->Rotate(5, 45, 0);
-	objects[1]->GetTransform()->Rotate(5, 45, 0);
-	objects[2]->GetTransform()->Rotate(5, 45, 0);
-	objects[3]->GetTransform()->Rotate(5, 45, 0);
-	objects[4]->GetTransform()->Rotate(5, 45, 0);
-	objects[5]->GetTransform()->Rotate(5, 45, 0);
-
-	objects[6]->GetTransform()->Rotate(5, 45, 0);
-	objects[7]->GetTransform()->Rotate(5, 45, 0);
-	objects[8]->GetTransform()->Rotate(5, 45, 0);
-	objects[9]->GetTransform()->Rotate(5, 45, 0);
-	objects[10]->GetTransform()->Rotate(5, 45, 0);
-	objects[11]->GetTransform()->Rotate(5, 45, 0);
+	objects[0]->GetTransform()->MoveAbsolute(-6, 0, 0);
+	objects[1]->GetTransform()->MoveAbsolute(-4, 0, 0);
+	objects[2]->GetTransform()->MoveAbsolute(-2, 0, 0);
+	objects[3]->GetTransform()->MoveAbsolute(-0, 0, 0);
+	objects[4]->GetTransform()->MoveAbsolute(2, 0, 0);
+	objects[5]->GetTransform()->MoveAbsolute(4, 0, 0);
+	objects[6]->GetTransform()->MoveAbsolute(6, 0, 0);
 
 	sky = std::make_shared<Sky>(
 		FixPath(L"../../Assets/Textures/Skies/Clouds Pink/right.png").c_str(),
@@ -451,6 +575,101 @@ void Game::CreateCameras()
 	activedCamera = cameras[0];
 }
 
+void Game::CreateShadowMap()
+{
+	shadowMapResolution = 1024;
+
+	// Create the actual texture that will be the shadow map
+	D3D11_TEXTURE2D_DESC shadowDesc = {};
+	shadowDesc.Width = shadowMapResolution; // Ideally a power of 2 (like 1024)
+	shadowDesc.Height = shadowMapResolution; // Ideally a power of 2 (like 1024)
+	shadowDesc.ArraySize = 1;
+	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.CPUAccessFlags = 0;
+	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowDesc.MipLevels = 1;
+	shadowDesc.MiscFlags = 0;
+	shadowDesc.SampleDesc.Count = 1;
+	shadowDesc.SampleDesc.Quality = 0;
+	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
+	device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
+
+	// Create the depth/stencil view
+	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSDesc = {};
+	shadowDSDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	shadowDSDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	shadowDSDesc.Texture2D.MipSlice = 0;
+	device->CreateDepthStencilView(
+		shadowTexture.Get(),
+		&shadowDSDesc,
+		shadowDSV.GetAddressOf());
+	// Create the SRV for the shadow map
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	device->CreateShaderResourceView(
+		shadowTexture.Get(),
+		&srvDesc,
+		shadowSRV.GetAddressOf());
+
+	XMMATRIX shView = XMMatrixLookAtLH(
+		XMVectorSet(0, 20, -20, 0),
+		XMVectorSet(0, 0, 0,0),
+		XMVectorSet(0, 1, 0, 0)); 
+	XMStoreFloat4x4(&shadowViewMatrix, shView);
+
+	shadowProjectionSize = 15.0f; // Tweak for your scene!
+
+	XMMATRIX shProj = XMMatrixOrthographicLH(
+		shadowProjectionSize, 
+		shadowProjectionSize, 
+		0.1f, 
+		100.0f);
+	XMStoreFloat4x4(&shadowProjectionMatrix, shProj);
+}
+
+void Game::RenderShadowMap()
+{
+	// Clear Shadow map
+	context->ClearDepthStencilView(shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	// Set up the output merger stage
+	ID3D11RenderTargetView* nullRTV{};
+	context->OMSetRenderTargets(1, &nullRTV, shadowDSV.Get());
+
+	// Deactivate pixel shader
+	context->PSSetShader(0, 0, 0);
+
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = (float)shadowMapResolution;
+	viewport.Height = (float)shadowMapResolution;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+	                  
+	shadowVS->SetShader();
+	shadowVS->SetMatrix4x4("view", shadowViewMatrix);
+	shadowVS->SetMatrix4x4("projection", shadowProjectionMatrix);
+	// Loop and draw all entities
+	for (std::shared_ptr<Entity>& object : objects)
+	{
+		shadowVS->SetMatrix4x4("world", object->GetTransform()->GetWorldMatrix());
+		shadowVS->CopyAllBufferData();
+		
+		object->Draw(context, activedCamera);
+	}
+
+	viewport.Width = (float)this->windowWidth;
+	viewport.Height = (float)this->windowHeight;
+	context->RSSetViewports(1, &viewport);
+	context->OMSetRenderTargets(
+		1,
+		backBufferRTV.GetAddressOf(),
+		depthBufferDSV.Get());
+}
+
 
 
 // --------------------------------------------------------
@@ -511,12 +730,13 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	RenderShadowMap();
 	
 	for (std::shared_ptr<Entity>& object : objects)
 	{
 		//mesh->Draw(context);
 		object->GetMaterial()->GetPixelShader()->SetFloat("time", totalTime);
-		object->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
+		//object->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
 		pixelShader->SetData("lights", &lights[0], sizeof(Light) * (int)lights.size());
 
 		object->Draw(context, activedCamera);
@@ -566,7 +786,7 @@ void Game::UIUpdate(float deltaTime)
 		ImGui::ShowDemoWindow();
 	}
 
-
+	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 	ImGui::Begin("Inspector"); // Everything after is part of the window
 	ImGui::TableNextColumn(); ImGui::Checkbox("Show ImGui Demo Window", &showImGuiDemo);
 
@@ -646,7 +866,7 @@ void Game::UIUpdate(float deltaTime)
 	{
 		// Light details
 		ImGui::Spacing();
-		ImGui::ColorEdit3("Ambient Color", &ambientColor.x);
+		//ImGui::ColorEdit3("Ambient Color", &ambientColor.x);
 
 		// Loop and show the details for each entity
 		for (int i = 0; i < lights.size(); i++)
