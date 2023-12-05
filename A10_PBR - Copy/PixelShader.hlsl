@@ -44,10 +44,14 @@ float4 main(VertexToPixel input) : SV_TARGET
 	shadowUV.y = 1 - shadowUV.y; // Flip the Y
 	// Grab the distances we need: light-to-pixel and closest-surface
 	float distToLight = input.shadowMapPos.z;
-	float distShadowMap = ShadowMap.Sample(BasicSampler, shadowUV).r;
-	// For testing, just return black where there are shadows.
-	if (distShadowMap < distToLight)
-	return float4(0, 0, 0, 1);
+	// Get a ratio of comparison results using SampleCmpLevelZero()
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(
+		ShadowSampler,
+		shadowUV,
+		distToLight).r;
+	//// For testing, just return black where there are shadows.
+	//if (distShadowMap < distToLight)
+	//return float4(0, 0, 0, 1);
 
 	input.normal = normalize(input.normal);
 	input.tangent = normalize(input.tangent);
@@ -74,7 +78,15 @@ float4 main(VertexToPixel input) : SV_TARGET
 		switch (lights[i].Type)
 		{
 		case LIGHT_TYPE_DIRECTIONAL:
-			finalResult += DirLightPBR(light, input.normal, input.worldPosition, cameraPosition, roughness, metalness, surfaceColor.rgb, specularColor);
+			
+			float3 lightResult = DirLightPBR(light, input.normal, input.worldPosition, cameraPosition, roughness, metalness, surfaceColor.rgb, specularColor);
+			// If this is the first light, apply the shadowing result
+			if (i == 0)
+			{
+				lightResult *= shadowAmount;
+			}
+			// Add this light's result to the total light for this pixel
+			finalResult += lightResult;
 			break;
 
 		case LIGHT_TYPE_POINT:
