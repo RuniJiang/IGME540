@@ -43,7 +43,7 @@ private:
 	void RenderShaowMap();
 
 	void CameraUI(std::shared_ptr<Camera> cam);
-	void LightUI(Light& light);
+	void LightUI(Light& light, int index);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -82,6 +82,7 @@ private:
 
 	float speed;
 	float speed1;
+	float speed2;
 
 	DirectX::XMFLOAT4 colorTint;
 	DirectX::XMFLOAT3 ambientColor;

@@ -43,12 +43,13 @@ Game::Game(HINSTANCE hInstance)
 
 	speed = 0.5f;
 	speed1 = 0.5f;
+	speed2 = 0.5f;
 	colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	ambientColor = XMFLOAT3(0.1f, 0.1f, 0.25f);
 	showImGuiDemo = false;
 
 	shadowMapResolution = 1024;
-	shadowProjectionSize = 10.0f;
+	shadowProjectionSize = 15.0f;
 	DirectX::XMStoreFloat4x4(&shadowProjectionMatrix, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&shadowViewMatrix, DirectX::XMMatrixIdentity());
 
@@ -518,6 +519,22 @@ void Game::CreateGeometry()
 	directionalLight1.Direction = XMFLOAT3(0, -1, 1);
 	lights.push_back(directionalLight1);
 
+	Light directionalLight2;
+	directionalLight2 = {};
+	directionalLight2.Color = XMFLOAT3(1, 1, 1);
+	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight2.Intensity = 1.0f;
+	directionalLight2.Direction = XMFLOAT3(1, 0, 0);
+	lights.push_back(directionalLight2);
+
+	Light directionalLight3;
+	directionalLight3 = {};
+	directionalLight3.Color = XMFLOAT3(1, 1, 1);
+	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight3.Intensity = 1.0f;
+	directionalLight3.Direction = XMFLOAT3(-1, 1, -0.5f);
+	lights.push_back(directionalLight3);
+
 	Light pointLight1 = {};
 	pointLight1.Color = XMFLOAT3(1, 1, 1);
 	pointLight1.Type = LIGHT_TYPE_POINT;
@@ -533,24 +550,6 @@ void Game::CreateGeometry()
 	pointLight2.Position = XMFLOAT3(1.5f, 0, 0);
 	pointLight2.Range = 10.0f;
 	lights.push_back(pointLight2);
-
-	Light pointLight3;
-	pointLight3 = {};
-	pointLight3.Color = XMFLOAT3(1, 1, 1);
-	pointLight3.Type = LIGHT_TYPE_POINT;
-	pointLight3.Intensity = 1.0f;
-	pointLight3.Position = XMFLOAT3(0, 0, 1);
-	pointLight2.Range = 10.0f;
-	lights.push_back(pointLight3);
-
-	Light pointLight4;
-	pointLight4 = {};
-	pointLight4.Color = XMFLOAT3(1, 1, 1);
-	pointLight4.Type = LIGHT_TYPE_POINT;
-	pointLight4.Intensity = 1.0f;
-	pointLight4.Position = XMFLOAT3(-1, 1, -0.5f);
-	pointLight2.Range = 10.0f;
-	lights.push_back(pointLight4);
 }
 
 // --------------------------------------------------------
@@ -639,9 +638,11 @@ void Game::CreateShadowMap()
 	shadowSampDesc.BorderColor[0] = 1.0f; // Only need the first component
 	device->CreateSamplerState(&shadowSampDesc, &shadowSampler);
 
+	XMFLOAT3 lightDirectionFloat3 = lights[0].Direction;
+	XMVECTOR lightDirection = XMLoadFloat3(&lightDirectionFloat3);
 	XMMATRIX shView = XMMatrixLookAtLH(
-		XMVectorSet(0, 20, -20, 0),
-		XMVectorSet(0, 0, 0, 0),
+		-lightDirection * 20,
+		lightDirection,
 		XMVectorSet(0, 1, 0, 0));
 	XMStoreFloat4x4(&shadowViewMatrix, shView);
 
@@ -722,7 +723,7 @@ void Game::Update(float deltaTime, float totalTime)
 		speed = -speed;
 	}
 	objects[1]->GetTransform()->MoveAbsolute(0,speed * deltaTime, 0);
-	objects[3]->GetTransform()->MoveAbsolute( speed * deltaTime, 0, 0);
+	//objects[3]->GetTransform()->MoveAbsolute( speed * deltaTime, 0, 0);
 
 	if (objects[2]->GetTransform()->GetPosition().y >= 1 ||
 		objects[2]->GetTransform()->GetPosition().y <= -1)
@@ -731,6 +732,13 @@ void Game::Update(float deltaTime, float totalTime)
 	}
 	objects[2]->GetTransform()->MoveAbsolute(0, speed1 * deltaTime, 0);
 	
+
+	if (objects[3]->GetTransform()->GetPosition().x >= 4.7 ||
+		objects[3]->GetTransform()->GetPosition().x <= 3.3)
+	{
+		speed2 = -speed2;
+	}
+	objects[3]->GetTransform()->MoveAbsolute(speed2 * deltaTime,0, 0);
 
 	////// Change the scale based on sin
 	//float temp = abs(sin(totalTime));
@@ -820,8 +828,8 @@ void Game::UIUpdate(float deltaTime)
 	input.SetKeyboardCapture(io.WantCaptureKeyboard);
 	input.SetMouseCapture(io.WantCaptureMouse);
 
-
-	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
+	// Shadow Test
+	//ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 
 	// Show the demo window
 	if (showImGuiDemo)
@@ -918,7 +926,7 @@ void Game::UIUpdate(float deltaTime)
 			{
 				ImGui::Spacing();
 
-				LightUI(lights[i]);
+				LightUI(lights[i], i);
 
 				ImGui::TreePop();
 			}
@@ -991,7 +999,7 @@ void Game::CameraUI(std::shared_ptr<Camera> cam)
 // --------------------------------------------------------
 // Builds the UI for a single light
 // --------------------------------------------------------
-void Game::LightUI(Light& light)
+void Game::LightUI(Light& light, int index)
 {
 	// Light type
 	if (light.Type == LIGHT_TYPE_DIRECTIONAL)
@@ -1006,11 +1014,30 @@ void Game::LightUI(Light& light)
 	// Direction
 	if (light.Type == LIGHT_TYPE_DIRECTIONAL || light.Type == LIGHT_TYPE_SPOT)
 	{
-		ImGui::DragFloat3("Direction", &light.Direction.x, 0.1f);
+
+		bool projChanged = false;
+		if (ImGui::DragFloat3("Direction", &light.Direction.x, 0.1f))
+		{
+			projChanged = true;
+		}
 
 		// Normalize the direction
 		XMVECTOR dirNorm = XMVector3Normalize(XMLoadFloat3(&light.Direction));
 		XMStoreFloat3(&light.Direction, dirNorm);
+
+
+		if (index == 0 && projChanged)
+		{
+			XMFLOAT3 lightDirectionFloat3 = lights[0].Direction;
+			XMVECTOR lightDirection = XMLoadFloat3(&lightDirectionFloat3);
+			XMMATRIX shView = XMMatrixLookAtLH(
+				-lightDirection * 20,
+				lightDirection,
+				XMVectorSet(0, 1, 0, 0));
+			XMStoreFloat4x4(&shadowViewMatrix, shView);
+		}
+
+
 	}
 
 	// Position & Range
