@@ -916,7 +916,7 @@ void Game::UIUpdate(float deltaTime)
 	input.SetMouseCapture(io.WantCaptureMouse);
 
 	// Shadow Test
-	ImGui::Image(ppSRV.Get(), ImVec2(512, 512));
+	//ImGui::Image(ppSRV.Get(), ImVec2(512, 512));
 	//ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 
 	// Show the demo window
