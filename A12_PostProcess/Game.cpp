@@ -713,6 +713,12 @@ void Game::CreatePostProcess()
 	ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
 
+	ResizePostProcess();
+
+}
+
+void Game::ResizePostProcess()
+{
 	// Describe the texture we're creating
 	D3D11_TEXTURE2D_DESC textureDesc = {};
 	textureDesc.Width = windowWidth;
@@ -746,7 +752,6 @@ void Game::CreatePostProcess()
 		ppTexture.Get(),
 		0,
 		ppSRV.ReleaseAndGetAddressOf());
-
 }
 
 
@@ -761,6 +766,8 @@ void Game::OnResize()
 	for(auto& camera : cameras)
 	camera->UpdateProjectionMatrix((float)this->windowWidth / this->windowHeight);
 
+
+	ResizePostProcess();
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 }

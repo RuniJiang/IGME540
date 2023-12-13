@@ -42,6 +42,7 @@ private:
 	void CreateShadowMap();
 	void RenderShaowMap();
 	void CreatePostProcess();
+	void ResizePostProcess();
 
 	void CameraUI(std::shared_ptr<Camera> cam);
 	void LightUI(Light& light, int index);
