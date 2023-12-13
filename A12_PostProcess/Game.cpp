@@ -827,6 +827,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+
+	RenderShaowMap();
+
 	// --- Post Processing - Pre-Render ---------------------
 	{
 		// Clear post process target too
@@ -835,7 +838,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->OMSetRenderTargets(1, ppRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
 
-	RenderShaowMap();
 	
 	for (std::shared_ptr<Entity>& object : objects)
 	{
@@ -853,14 +855,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		object->Draw(context, activedCamera);
 	}
 	sky->Draw(activedCamera);
-	{
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); 
-	}
 
-
-	//// --- Post processing - Post-Draw -----------------------
+	//// --- Post processing - Post-Render -----------------------
 	{
+
 		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
 		// Activate shaders and bind resources
 		// Also set any required cbuffer data (not shown)
@@ -869,12 +867,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		ppPS->SetShaderResourceView("Pixels", ppSRV.Get());
 		ppPS->SetSamplerState("ClampSampler", ppSampler.Get());
 
-		int blurRadius = 10;
-		float pixelWidth = 10;
-		float pixelHeight = 10;
 		ppPS->SetData("blurRadius", &blurRadius, sizeof(int));
-		ppPS->SetData("pixelWidth", &pixelWidth, sizeof(float));
-		ppPS->SetData("pixelHeight", &pixelHeight, sizeof(float));
+		ppPS->SetFloat("pixelWidth", 1.0f / windowWidth);
+		ppPS->SetFloat("pixelHeight", 1.0f / windowHeight);
 		ppPS->CopyAllBufferData();
 
 		context->Draw(3, 0); // Draw exactly 3 vertices (one triangle)
@@ -888,9 +883,14 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
 	{
+
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
 		// Present the back buffer to the user
 		//  - Puts the results of what we've drawn onto the window
 		//  - Without this, the user never sees anything
+
 		bool vsyncNecessary = vsync || !deviceSupportsTearing || isFullscreen;
 		swapChain->Present(
 			vsyncNecessary ? 1 : 0,
@@ -919,7 +919,7 @@ void Game::UIUpdate(float deltaTime)
 
 	// Shadow Test
 	ImGui::Image(ppSRV.Get(), ImVec2(512, 512));
-	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
+	//ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 
 	// Show the demo window
 	if (showImGuiDemo)
