@@ -53,9 +53,7 @@ Game::Game(HINSTANCE hInstance)
 	DirectX::XMStoreFloat4x4(&shadowProjectionMatrix, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&shadowViewMatrix, DirectX::XMMatrixIdentity());
 
-	blurRadius = 10;
-	pixelWidth = 10;
-	pixelHeight = 10;
+	blurRadius = 5;
 
 }
 
@@ -1026,7 +1024,11 @@ void Game::UIUpdate(float deltaTime)
 		// Finalize the tree node
 		ImGui::TreePop();
 	}
-
+	if (ImGui::TreeNode("Post Processing"))
+	{
+		ImGui::SliderInt("Blur Radius", &blurRadius, 0, 10);
+		ImGui::TreePop();
+	}
 
 	ImGui::End(); // Ends the current window
 

@@ -77,8 +77,6 @@ private:
 
 	// Post-processing
 	int blurRadius;
-	float pixelWidth;
-	float pixelHeight; 
 	
 	// Resources that are shared among all post processes
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
