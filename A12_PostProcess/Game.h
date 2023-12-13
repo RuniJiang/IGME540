@@ -40,10 +40,11 @@ private:
 	void CreateGeometry();
 	void CreateCameras();
 	void CreateShadowMap();
-	void RenderShadowMap();
+	void RenderShaowMap();
+	void CreatePostProcess();
 
 	void CameraUI(std::shared_ptr<Camera> cam);
-	void LightUI(Light& light);
+	void LightUI(Light& light, int index);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -62,16 +63,26 @@ private:
 	std::shared_ptr<SimplePixelShader> customPS2;
 	std::shared_ptr<SimpleVertexShader> skyVS;
 	std::shared_ptr<SimplePixelShader> skyPS;
+	std::shared_ptr<SimpleVertexShader> shadowVS;
 
-	// Shadow map
+	// Shadow
 	int shadowMapResolution;
 	float shadowProjectionSize;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
 	DirectX::XMFLOAT4X4 shadowViewMatrix;
 	DirectX::XMFLOAT4X4 shadowProjectionMatrix;
-	std::shared_ptr<SimpleVertexShader> shadowVS;
-	//std::shared_ptr<SimplePixelShader> skyPS;
+
+	// Post-processing
+	// Resources that are shared among all post processes
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	std::shared_ptr<SimpleVertexShader> ppVS;
+	// Resources that are tied to a particular post process
+	std::shared_ptr<SimplePixelShader> ppPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ppRTV; // For rendering
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ppSRV; // For sampling
 
 
 	//Meshes
@@ -80,6 +91,8 @@ private:
 	std::vector < std::shared_ptr<Material>> materials;
 
 	float speed;
+	float speed1;
+	float speed2;
 
 	DirectX::XMFLOAT4 colorTint;
 	DirectX::XMFLOAT3 ambientColor;

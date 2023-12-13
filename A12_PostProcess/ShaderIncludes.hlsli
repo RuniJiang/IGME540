@@ -46,6 +46,8 @@ struct VertexToPixel
     float3 normal : NORMARL;
 	float3 tangent : TANGENT;
     float3 worldPosition : POSITIONT;
+    //float4 posForShadow : SHADOWPOS;
+    float4 shadowMapPos : SHADOW_POSITION;
 };
 
 struct VertexToPixel_Sky
@@ -56,9 +58,8 @@ struct VertexToPixel_Sky
 
 struct VertexToPixel_Shadow
 {
-	float4 screenPosition	: SV_POSITION;
+    float4 screenPosition : SV_POSITION;
 };
-
 
 // ---------------------------------------------------------------------------------- //
 // ---------------------------------- LIGHTS ---------------------------------------- //
