@@ -53,6 +53,10 @@ Game::Game(HINSTANCE hInstance)
 	DirectX::XMStoreFloat4x4(&shadowProjectionMatrix, DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&shadowViewMatrix, DirectX::XMMatrixIdentity());
 
+	blurRadius = 10;
+	pixelWidth = 10;
+	pixelHeight = 10;
+
 }
 
 // --------------------------------------------------------
@@ -112,6 +116,7 @@ void Game::Init()
 	}
 
 	CreateShadowMap();
+	CreatePostProcess();
 }
 
 // --------------------------------------------------------
@@ -138,6 +143,12 @@ void Game::LoadShaders()
 		FixPath(L"SkyPixelShader.cso").c_str());
 	shadowVS = std::make_shared<SimpleVertexShader>(device, context,
 		FixPath(L"ShadowVS.cso").c_str());
+
+	// Blur Post Process
+	ppPS = std::make_shared<SimplePixelShader>(device, context,
+		FixPath(L"BlurPostProcessPS.cso").c_str());
+	ppVS = std::make_shared<SimpleVertexShader>(device, context,
+		FixPath(L"FullscreenVS.cso").c_str());
 }
 
 // --------------------------------------------------------
@@ -737,6 +748,7 @@ void Game::CreatePostProcess()
 		ppTexture.Get(),
 		0,
 		ppSRV.ReleaseAndGetAddressOf());
+
 }
 
 
@@ -815,6 +827,14 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	// --- Post Processing - Pre-Render ---------------------
+	{
+		// Clear post process target too
+		const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // Black
+		context->ClearRenderTargetView(ppRTV.Get(), clearColor);
+		context->OMSetRenderTargets(1, ppRTV.GetAddressOf(), depthBufferDSV.Get());
+	}
+
 	RenderShaowMap();
 	
 	for (std::shared_ptr<Entity>& object : objects)
@@ -838,8 +858,31 @@ void Game::Draw(float deltaTime, float totalTime)
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); 
 	}
 
+
+	//// --- Post processing - Post-Draw -----------------------
+	{
+		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
+		// Activate shaders and bind resources
+		// Also set any required cbuffer data (not shown)
+		ppVS->SetShader();
+		ppPS->SetShader();
+		ppPS->SetShaderResourceView("Pixels", ppSRV.Get());
+		ppPS->SetSamplerState("ClampSampler", ppSampler.Get());
+
+		int blurRadius = 10;
+		float pixelWidth = 10;
+		float pixelHeight = 10;
+		ppPS->SetData("blurRadius", &blurRadius, sizeof(int));
+		ppPS->SetData("pixelWidth", &pixelWidth, sizeof(float));
+		ppPS->SetData("pixelHeight", &pixelHeight, sizeof(float));
+		ppPS->CopyAllBufferData();
+
+		context->Draw(3, 0); // Draw exactly 3 vertices (one triangle)
+	}
+
 	ID3D11ShaderResourceView* nullSRVs[128] = {};
 	context->PSSetShaderResources(0, 128, nullSRVs);
+
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME
@@ -875,7 +918,8 @@ void Game::UIUpdate(float deltaTime)
 	input.SetMouseCapture(io.WantCaptureMouse);
 
 	// Shadow Test
-	//ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
+	ImGui::Image(ppSRV.Get(), ImVec2(512, 512));
+	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 
 	// Show the demo window
 	if (showImGuiDemo)

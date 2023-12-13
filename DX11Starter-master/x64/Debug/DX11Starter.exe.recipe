@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\DX11Starter.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\CustomPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\CustomPS2.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\PixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\ShadowVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\SkyPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\SkyVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\VertexShader.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

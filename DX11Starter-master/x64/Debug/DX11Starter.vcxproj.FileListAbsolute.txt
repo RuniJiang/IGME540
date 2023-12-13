@@ -1,0 +1,5 @@
+D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\DX11Starter.vcxproj.CopyComplete
+D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\DX11Starter.exe
+D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\xapobaseredist.pdb
+D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\xaudio2_9redist.pdb
+D:\Profiles\rj4843\Documents\IGME540\DX11Starter-master\x64\Debug\xaudio2_9redist.dll

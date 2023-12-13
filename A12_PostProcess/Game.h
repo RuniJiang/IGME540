@@ -76,6 +76,10 @@ private:
 	DirectX::XMFLOAT4X4 shadowProjectionMatrix;
 
 	// Post-processing
+	int blurRadius;
+	float pixelWidth;
+	float pixelHeight; 
+	
 	// Resources that are shared among all post processes
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
 	std::shared_ptr<SimpleVertexShader> ppVS;
